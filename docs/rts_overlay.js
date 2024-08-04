@@ -12,6 +12,8 @@ const DEFAULT_BO_PANEL_FONTSIZE = 1.0;    // Default font size for BO panel.
 const DEFAULT_BO_PANEL_IMAGES_SIZE = 25;  // Default images size for BO panel.
 // Height of the action buttons as a ratio of the images size for the BO panel.
 const ACTION_BUTTON_HEIGHT_RATIO = 0.8;
+// Default choice for overlay on right or left side of the screen.
+const DEFAULT_OVERLAY_ON_RIGHT_SIDE = false;
 
 // Overlay panel keyboard shortcuts
 // Hotkeys values can be found on the link below ('' to not use any hotkey).
@@ -84,6 +86,8 @@ let imageHeightBO = DEFAULT_BO_PANEL_IMAGES_SIZE;
 // Height of the action buttons.
 let actionButtonHeight =
     ACTION_BUTTON_HEIGHT_RATIO * DEFAULT_BO_PANEL_IMAGES_SIZE;
+// Overlay on right or left side of the screen.
+let overlayOnRightSide = DEFAULT_OVERLAY_ON_RIGHT_SIDE;
 
 // Build order timer elements
 let buildOrderTimer = {
@@ -154,7 +158,7 @@ function limitStepID() {
 }
 
 /**
- * Resize the overlay and move it to keep its top right corner
+ * Resize the overlay and move it to keep its top left/right corner
  * at the same position.
  */
 function overlayResizeMove() {
@@ -180,14 +184,21 @@ function overlayResizeMove() {
   // Apply modifications if at least one dimension requires an update
   if (widthFlag || heightFlag) {
     // Save upper right corner position
-    const upperRightX = window.screenLeft + currentWidth;
+    const upperLeftX = window.screenLeft;
+    const upperRightX = upperLeftX + currentWidth;
     const upperRightY = window.screenTop;
 
     // Resize the panel
     window.resizeTo(newWidth, newHeight);
 
-    // Move the panel (keeping upper right corner at same position as before)
-    window.moveTo(upperRightX - newWidth, upperRightY);
+    // Move the panel to keep one upper corner at same position as before
+    if (overlayOnRightSide) {
+      // Upper right corner at same position as before
+      window.moveTo(upperRightX - newWidth, upperRightY);
+    } else {
+      // Upper left corner at same position as before
+      window.moveTo(upperLeftX, upperRightY);
+    }
   }
 }
 
@@ -443,7 +454,10 @@ function getBOPanelContent(overlayFlag, BOStepID) {
   const commonPicturesFolder = 'assets/common/';
 
   // Configuration from within the BO panel
-  htmlString += '<nobr><div class="bo_line bo_line_config">';
+  const justifyFlex =
+      overlayOnRightSide ? 'justify_flex_end' : 'justify_flex_start';
+  htmlString +=
+      '<nobr><div class="bo_line bo_line_config ' + justifyFlex + '">';
 
   // true to use the timer, false for manual selection
   const timingFlag = buildOrderTimer['use_timer'];
@@ -838,6 +852,7 @@ function getDiplayOverlayTooltiptext() {
 <div>To keep it on top of your game while playing, use an <em>Always On Top</em> application.</div>
 <div>For Windows, <em>PowerToys</em> is a good solution.</div>
 <div>It is free, developed by Microsoft and available on the <em>Microsoft Store</em>.</div>
+<div>Other solutions are detailed in the Readme (link on the bottom of this page).</div>
 <div>-----</div>
 <div>Use the left and right arrows to select the build order step.</div>
 <div>In case valid timings are available for all steps, click on the feather/hourglass</div>
@@ -899,9 +914,10 @@ function getDiplayOverlayTooltiptext() {
 }
 
 /**
- * Update the build order elements (font size and images size) based on sliders.
+ * Update the build order elements (font size, images size and position)
+ * based on widgets.
  */
-function updateBOFromSliders() {
+function updateBOFromWidgets() {
   // Font size
   const fontSize = parseFloat(document.getElementById('bo_fontsize').value)
                        .toFixed(1)
@@ -914,11 +930,21 @@ function updateBOFromSliders() {
   // Images size
   const imagesSize = parseInt(document.getElementById('bo_images_size').value);
   document.getElementById('bo_images_size_value').innerHTML =
-      imagesSize + ' (image)';
+      imagesSize + ' (images)';
 
   if (imagesSize !== imageHeightBO) {
     imageHeightBO = imagesSize;
     actionButtonHeight = ACTION_BUTTON_HEIGHT_RATIO * imagesSize;
+    updateBOPanel(false);
+  }
+
+  // Fixed top corner choice
+  const newOverlayOnRightSide =
+      document.getElementById('left_right_side').checked;
+  if (newOverlayOnRightSide !== overlayOnRightSide) {
+    overlayOnRightSide = newOverlayOnRightSide;
+    document.getElementById('side_selection_text').innerHTML =
+        'overlay on the ' + (overlayOnRightSide ? 'right' : 'left');
     updateBOPanel(false);
   }
 }
@@ -957,7 +983,9 @@ function initConfigWindow() {
   document.getElementById('bo_fontsize').value = DEFAULT_BO_PANEL_FONTSIZE;
   document.getElementById('bo_images_size').value =
       DEFAULT_BO_PANEL_IMAGES_SIZE;
-  updateBOFromSliders();
+  document.getElementById('left_right_side').checked =
+      DEFAULT_OVERLAY_ON_RIGHT_SIDE;
+  updateBOFromWidgets();
 
   // Updating the variables when changing the game
   document.getElementById('select_game').addEventListener('input', function() {
@@ -992,12 +1020,18 @@ function initConfigWindow() {
 
   // Update BO elements when any slider is moving
   document.getElementById('bo_fontsize').addEventListener('input', function() {
-    updateBOFromSliders();
+    updateBOFromWidgets();
   });
 
   document.getElementById('bo_images_size')
       .addEventListener('input', function() {
-        updateBOFromSliders();
+        updateBOFromWidgets();
+      });
+
+  // Update BO side selection when updating the corresponding toggle
+  document.getElementById('left_right_side')
+      .addEventListener('input', function() {
+        updateBOFromWidgets();
       });
 }
 
@@ -1015,8 +1049,9 @@ function updateTitle() {
 function updateRTSOverlayInfo() {
   let content = '<div>' +
       getImageHTML('assets/common/icon/info.png', INFO_IMAGE_HEIGHT) + '</div>';
-  content += '<span class="tooltiptext_left"><div>' + getInstructions() +
-      '</div></span>';
+  content +=
+      '<span id="tooltip_rts_overlay_info" class="tooltiptext_left"><div>' +
+      getInstructions() + '</div></span>';
 
   document.getElementById('rts_overlay_info').innerHTML = content;
 }
@@ -1027,6 +1062,7 @@ function updateRTSOverlayInfo() {
 function updateSalamanderIcon() {
   document.getElementById('bo_panel').innerHTML = '';
   document.getElementById('bo_panel_sliders').style.display = 'none';
+  document.getElementById('left_right_toggle').style.display = 'none';
   document.getElementById('salamander').innerHTML = getImageHTML(
       'assets/common/icon/salamander_sword_shield.png',
       SALAMANDER_IMAGE_HEIGHT);
@@ -1045,10 +1081,15 @@ function updateBOPanel(overlayFlag) {
     salamaderIcon.innerHTML = '';
   }
 
-  // Show BO panel sliders if present
+  // Show BO panel sliders and left/right toggle if present
   let boPanelSliders = document.getElementById('bo_panel_sliders');
   if (boPanelSliders) {
     boPanelSliders.style.display = 'flex';
+  }
+
+  let leftRightToggle = document.getElementById('left_right_toggle');
+  if (leftRightToggle) {
+    leftRightToggle.style.display = 'flex';
   }
 
   // Update BO content
@@ -2115,6 +2156,7 @@ function displayOverlay() {
   htmlContent += '\n<script>';
 
   htmlContent += '\nconst actionButtonHeight = ' + actionButtonHeight + ';';
+  htmlContent += '\nconst overlayOnRightSide = ' + overlayOnRightSide + ';';
   htmlContent += '\nconst SLEEP_TIME = ' + SLEEP_TIME + ';';
   htmlContent += '\nconst INTERVAL_CALL_TIME = ' + INTERVAL_CALL_TIME + ';';
   htmlContent +=
@@ -2291,7 +2333,9 @@ function getArrayInstructions(
     evaluateTimeFlag, selectFactionLines = null, externalBOLines = null) {
   let result = [
     'Replace the text in the panel below by any build order in correct JSON format, then click',
-    'on \'Display overlay\' (appearing on the left side of the screen when the build order is valid).'
+    'on \'Display overlay\' (appearing on the left side of the screen when the build order is valid).',
+    'You will need an Always On Top application to keep the overlay visible while playing.',
+    'Hover briefly on the \'Display overlay\' button to get more information.'
   ];
 
   if (externalBOLines) {
@@ -2334,11 +2378,12 @@ function getArrayInstructions(
     'The build order validity is constantly checked. If it is not valid, a message appears on top of the text panel',
     'to explain what the issue is. This message will also tell if the build order can use the timing feature.',
     '',
-    'You can update the font size and the images height of the build order panel with the sliders on top of it.',
-    '',
     'To save your build order, click on \'Save build order\' (on the left), which will save it as a JSON file.',
     'Alternatively, you can click on \'Copy to clipboard\', to copy the build order content, and paste it anywhere.',
-    'To load a build order, drag and drop a file with the build order on this panel (or replace the text manually).'
+    'To load a build order, drag and drop a file with the build order on this panel (or replace the text manually).',
+    '',
+    'You can download a copy of the RTS Overlay by clicking the installation button in the URL bar. Firefox users',
+    'may need to install a browser add-on beforehand ("Progressive Web Apps For Firefox" by Filip Štamcar).'
   ];
   return result.concat(validityFontSizeSavePart);
 }
@@ -2356,7 +2401,7 @@ Welcome to RTS Overlay! \
 \nYour build order can then be displayed on top of the game, allowing you to use it with a single monitor. \
 \nUpdating the build order step in-game is done manually via buttons/hotkeys/timer.\
 \nIt does not interact with the game (no screen analysis, no controller interaction).\
-\n\nHover briefly on the information button ("i" icon on top of this panel) to read the full instructions.\
+\n\nHover on the information button ("i" icon on top of this panel) to read the full instructions.\
 \nTooltips are available for the buttons on the left (by hovering during a short time). \
 \n\nHave fun!`;
 }
