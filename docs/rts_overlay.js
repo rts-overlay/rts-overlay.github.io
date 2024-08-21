@@ -3,7 +3,8 @@
 const SELECT_IMAGE_HEIGHT = 35;  // Height of BO (Build Order) design images.
 const TITLE_IMAGE_HEIGHT = 70;   // Height of the 'RTS Overlay' title.
 const INFO_IMAGE_HEIGHT = 30;  // Height of the RTS Overlay information button.
-const SALAMANDER_IMAGE_HEIGHT = 300;  // Height of the salamander image.
+const FACTION_ICON_HEIGHT = 25;       // Height of faction selection icon.
+const SALAMANDER_IMAGE_HEIGHT = 250;  // Height of the salamander image.
 const SLEEP_TIME = 100;               // Sleep time to resize the window [ms].
 const INTERVAL_CALL_TIME = 250;    // Time interval between regular calls [ms].
 const SIZE_UPDATE_THRESHOLD = 5;   // Minimal thershold to update the size.
@@ -14,6 +15,9 @@ const DEFAULT_BO_PANEL_IMAGES_SIZE = 25;  // Default images size for BO panel.
 const ACTION_BUTTON_HEIGHT_RATIO = 0.8;
 // Default choice for overlay on right or left side of the screen.
 const DEFAULT_OVERLAY_ON_RIGHT_SIDE = false;
+const MAX_SEARCH_RESULTS = 10;  // Maximum number of search results to display.
+// Max error ratio threshold on the Levenshtein similarity to accept the match.
+const LEVENSHTEIN_RATIO_THRESHOLD = 0.5;
 
 // Overlay panel keyboard shortcuts
 // Hotkeys values can be found on the link below ('' to not use any hotkey).
@@ -50,6 +54,13 @@ const EXTERNAL_BO_WEBSITES = {
   ]
 };
 
+// Fields of the faction name: player and (optionally) opponent
+const FACTION_FIELD_NAMES = {
+  'aoe2': {'player': 'civilization', 'opponent': null},
+  'aoe4': {'player': 'civilization', 'opponent': null},
+  'sc2': {'player': 'race', 'opponent': 'opponent_race'}
+};
+
 // List of games where each step starts at the given time
 // (step ending otherwise).
 const TIMER_STEP_STARTING_FLAG = ['sc2'];
@@ -70,12 +81,19 @@ const ERROR_IMAGE = 'assets/common/icon/question_mark.png';
 
 // -- Variables -- //
 
-let gameName = 'aoe2';     // Name of the game (i.e. its picture folder)
-let dataBO = null;         // Data of the selected BO
-let stepCount = -1;        // Number of steps of the current BO
-let stepID = -1;           // ID of the current BO step
-let overlayWindow = null;  // Window for the overlay
-let imagesGame = {};       // Dictionary with images available for the game.
+let gameName = 'aoe2';  // Name of the game (i.e. its picture folder)
+let gameFullName = 'Age of Empires II';  // Full name of the game
+let mainConfiguration = 'library';       // Main configuration mode
+// Library with all the stored build orders for the current game
+let library = {};
+// List of valid keys from 'library' for the selected faction
+let libraryValidKeys = [];
+let selectedBOFromLibrary = null;  // Selected BO from library
+let dataBO = null;                 // Data of the selected BO
+let stepCount = -1;                // Number of steps of the current BO
+let stepID = -1;                   // ID of the current BO step
+let overlayWindow = null;          // Window for the overlay
+let imagesGame = {};    // Dictionary with images available for the game.
 let imagesCommon = {};  // Dictionary with images available from common folder.
 let factionsList = {};  // List of factions with 3 letters and icon.
 let factionImagesFolder = '';  // Folder where the faction images are located.
@@ -348,7 +366,8 @@ function getImageHTML(
   // Button with image
   if (functionName) {
     imageHTML += '<input type="image" src="' + imagePath + '"';
-    imageHTML += ' onerror="this.src=\'' + ERROR_IMAGE + '\'"';
+    imageHTML +=
+        ' onerror="this.onerror=null; this.src=\'' + ERROR_IMAGE + '\'"';
     imageHTML += imageID ? ' id="' + imageID + '"' : '';
     imageHTML += ' height="' + imageHeight + '"';
     imageHTML += ' onclick="' + functionName +
@@ -359,7 +378,8 @@ function getImageHTML(
   // Image (no button)
   else {
     imageHTML += '<img src="' + imagePath + '"';
-    imageHTML += ' onerror="this.src=\'' + ERROR_IMAGE + '\'"';
+    imageHTML +=
+        ' onerror="this.onerror=null; this.src=\'' + ERROR_IMAGE + '\'"';
     imageHTML += imageID ? ' id="' + imageID + '"' : '';
     imageHTML += ' height="' + imageHeight + '">';
   }
@@ -593,26 +613,89 @@ function updateInvalidDataBO() {
 }
 
 /**
- * Show or hide the items depending on the BO validity.
+ * Show or hide the items depending on the BO validity, the game and
+ * selected configuration.
  */
-function showHideItemsBOValidity() {
+function showHideItems() {
   // List of items to show/hide.
-  const itemNames = [
-    'copy_to_clipboard', 'save_to_file', 'add_bo_step', 'format_bo',
-    'diplay_overlay', 'evaluate_time', 'time_offset_widget'
+  const libraryItems = [
+    'from_library_text', 'bo_faction_selection', 'bo_search_results',
+    'delete_bo_row', 'delete_current_bo'
   ];
 
+  const websiteItems = ['external_bo_text', 'external_bo_webistes'];
+
+  const designItems = [
+    'design_bo_text', 'design_bo_row_main', 'image_category_line', 'image_copy',
+    'images_bo_display'
+  ];
+  const designValidItems = ['add_bo_step', 'format_bo'];
+  const designValidTimeItems = ['design_bo_row_time'];
+
+  const saveItems = ['save_bo_text', 'save_row'];
+
+  const displayItems = ['adapt_display_overlay', 'diplay_overlay'];
+
+  // Items corresponding to flex boxes
+  const flexItems = [
+    'bo_faction_selection', 'delete_bo_row', 'external_bo_webistes',
+    'design_bo_row_main', 'design_bo_row_time', 'save_row'
+  ];
+
+  // Concatenation of all items
+  const fullItems = libraryItems.concat(
+      websiteItems, designItems, designValidItems, designValidTimeItems,
+      saveItems, displayItems);
+
   // Loop on all the items
-  for (const itemName of itemNames) {
+  for (const itemName of fullItems) {
+    let showItem = false;
+
     // Check if the item can be shown
-    let showItem = dataBO != null;
-    if (showItem &&
-        ['evaluate_time', 'time_offset_widget'].includes(itemName)) {
-      showItem = isBOTimingEvaluationAvailable();
+    if (displayItems.includes(itemName)) {
+      showItem = dataBO !== null;
+    } else {
+      switch (mainConfiguration) {
+        case 'library':
+          if (libraryItems.includes(itemName)) {
+            if (['bo_faction_selection', 'delete_bo_row'].includes(itemName)) {
+              showItem = Object.keys(library).length !== 0;
+            } else if (itemName === 'delete_current_bo') {
+              showItem = selectedBOFromLibrary !== null;
+            } else {
+              showItem = true;
+            }
+          }
+          break;
+
+        case 'website':
+          if (websiteItems.includes(itemName)) {
+            showItem = true;
+          } else if (saveItems.includes(itemName)) {
+            showItem = dataBO !== null;
+          }
+          break;
+
+        case 'design':
+          if (designItems.includes(itemName)) {
+            showItem = true;
+          } else if (designValidItems.includes(itemName)) {
+            showItem = dataBO !== null;
+          } else if (designValidTimeItems.includes(itemName)) {
+            showItem = (dataBO !== null) && isBOTimingEvaluationAvailable();
+          } else if (saveItems.includes(itemName)) {
+            showItem = dataBO !== null;
+          }
+          break;
+
+        default:
+          throw 'Unknwon main configuration name: ' + mainConfiguration;
+      }
     }
 
     if (showItem) {  // Valid BO -> show items
-      document.getElementById(itemName).style.display = 'block';
+      document.getElementById(itemName).style.display =
+          flexItems.includes(itemName) ? 'flex' : 'block';
     } else {  // Invalid BO -> hide items
       document.getElementById(itemName).style.display = 'none';
     }
@@ -675,7 +758,7 @@ function updateDataBO() {
   }
 
   // Show/hide items based on the BO validity
-  showHideItemsBOValidity();
+  showHideItems();
 }
 
 /**
@@ -705,15 +788,15 @@ function updateImagesSelection(subFolder) {
   }
 
   // Specific case for faction selection
-  if (subFolder == 'select faction') {
+  if (subFolder === 'select faction') {
     for (const [key, value] of Object.entries(factionsList)) {
       console.assert(
-          value.length == 2, 'Faction list item should have a size of 2');
+          value.length === 2, 'Faction list item should have a size of 2');
 
       // Check if it is a valid image and get its path
       const imagePath = getImagePath(factionImagesFolder + '/' + value[1]);
       if (imagePath) {
-        if (rowCount == 0) {
+        if (rowCount === 0) {
           imagesContent += '<div class="row">';  // start new row
         }
         imagesContent += getImageHTML(
@@ -736,7 +819,7 @@ function updateImagesSelection(subFolder) {
       // Check if it is a valid image and get its path
       const imagePath = getImagePath(subFolder + '/' + image);
       if (imagePath) {  // image
-        if (rowCount == 0) {
+        if (rowCount === 0) {
           imagesContent += '<div class="row">';  // start new row
         }
         const imageWithSubFolder = '@' + subFolder + '/' + image + '@';
@@ -764,6 +847,80 @@ function updateImagesSelection(subFolder) {
 }
 
 /**
+ * Initialize the faction selection for the BO library filtering.
+ */
+function initBOFactionSelection() {
+  // No BO currently selected
+  selectedBOFromLibrary = null;
+
+  // Filter on player faction, then on opponent faction
+  for (const widgetID
+           of ['bo_faction_select_widget',
+               'bo_opponent_faction_select_widget']) {
+    // Widget to select the faction (for BOs filtering)
+    let factionSelectWidget = document.getElementById(widgetID);
+    factionSelectWidget.innerHTML = null;  // Clear all options
+
+    // Skip if no opponent faction filtering
+    if ((widgetID === 'bo_opponent_faction_select_widget') &&
+        !FACTION_FIELD_NAMES[gameName]['opponent']) {
+      factionSelectWidget.style.display = 'none';
+    }
+    // Display faction filtering
+    else {
+      factionSelectWidget.style.display = 'block';
+
+      console.assert(
+          Object.keys(factionsList).length >= 1,
+          'At least one faction expected.');
+      // Loop on all the factions
+      for (const [factionName, shortAndImage] of Object.entries(factionsList)) {
+        console.assert(
+            shortAndImage.length === 2,
+            '\'shortAndImage\' should have a size of 2');
+
+        let option = document.createElement('option');
+        option.text = shortAndImage[0];
+        option.value = factionName;
+        factionSelectWidget.add(option);
+      }
+    }
+  }
+
+  // Update faction image according to choice.
+  updateFactionImageSelection();
+}
+
+/**
+ * Update the selected faction image for BOs filtering.
+ */
+function updateFactionImageSelection() {
+  // Filter on player faction, then on opponent faction
+  for (let i = 0; i < 2; i++) {
+    let factionImage = document.getElementById(
+        (i === 0) ? 'bo_faction_image' : 'bo_opponent_faction_image');
+
+    // Skip if no opponent faction filtering
+    if ((i === 1) && !FACTION_FIELD_NAMES[gameName]['opponent']) {
+      factionImage.style.display = 'none';
+    } else {
+      factionImage.style.display = 'block';
+
+      const widgetName = (i === 0) ? 'bo_faction_select_widget' :
+                                     'bo_opponent_faction_select_widget';
+      const shortAndImage =
+          factionsList[document.getElementById(widgetName).value];
+      console.assert(
+          shortAndImage.length === 2,
+          '\'shortAndImage\' should have a size of 2');
+      factionImage.innerHTML = getImageHTML(
+          getImagePath(factionImagesFolder + '/' + shortAndImage[1]),
+          FACTION_ICON_HEIGHT);
+    }
+  }
+}
+
+/**
  * Initialize the images selection utility.
  */
 function initImagesSelection() {
@@ -778,7 +935,7 @@ function initImagesSelection() {
 
   // First process the images of 'imagesGame', then of 'imagesCommon'.
   for (let i = 0; i < 2; i++) {
-    const mainFolder = (i == 0) ? imagesGame : imagesCommon;
+    const mainFolder = (i === 0) ? imagesGame : imagesCommon;
 
     // Loop on the sub-folders with the images
     for (const subFolder of Object.keys(mainFolder)) {
@@ -794,20 +951,50 @@ function initImagesSelection() {
 }
 
 /**
+ * Update the main configuration selection depending on the game.
+ */
+function updateMainConfigSelection() {
+  const fromLibrary =
+      '<input type="radio" id="config_library" name="main_config_radios" value="library" checked>' +
+      '<label for="config_library" class="button">From library</label>';
+
+  const fromWebsite =
+      '<input type="radio" id="config_website" name="main_config_radios" value="website">' +
+      '<label for="config_website" class="button">From external website</label>';
+
+  const designYourOwn =
+      '<input type="radio" id="config_design" name="main_config_radios" value="design">' +
+      '<label for="config_design" class="button">Design your own</label>';
+
+  // Add or not the website section (checking if there is at least one website).
+  const fullContent = (gameName in EXTERNAL_BO_WEBSITES) ?
+      fromLibrary + fromWebsite + designYourOwn :
+      fromLibrary + designYourOwn;
+
+  document.getElementById('main_configuration').innerHTML = fullContent;
+
+  // Updating to library configuration
+  mainConfiguration = 'library';
+  showHideItems();
+
+  // Updating when selecting another configuration
+  let radios = document.querySelectorAll('input[name="main_config_radios"]');
+  for (let i = 0; i < radios.length; i++) {
+    radios[i].addEventListener('change', function() {
+      mainConfiguration = this.value;
+      showHideItems();
+    });
+  }
+}
+
+/**
  * Update the links to the external BO websites.
  */
 function updateExternalBOWebsites() {
-  // Remove 'external_bo_webistes' if it exists
-  const parent = document.getElementById('first_column');
-  const child = document.getElementById('external_bo_webistes');
-  if (child) {
-    parent.removeChild(child);
-  }
+  let linksContent = '';
 
-  // Check if external BO websites exist
+  // Check if website configuration and external BO websites exist
   if (gameName in EXTERNAL_BO_WEBSITES) {
-    let linksContent = '';
-
     // Add links to all websites
     for (const entry of EXTERNAL_BO_WEBSITES[gameName]) {
       console.assert(
@@ -830,14 +1017,8 @@ function updateExternalBOWebsites() {
       linksContent += '</span>';
       linksContent += '</form>';
     }
-
-    // Insert after 'game_selection' <div>
-    const previousElem = document.getElementById('game_selection');
-    previousElem.insertAdjacentHTML(
-        'afterend',
-        '<div class="config_row" id="external_bo_webistes">' + linksContent +
-            '</div>');
   }
+  document.getElementById('external_bo_webistes').innerHTML = linksContent;
 }
 
 /**
@@ -854,11 +1035,11 @@ function getDiplayOverlayTooltiptext() {
 <div>It is free, developed by Microsoft and available on the <em>Microsoft Store</em>.</div>
 <div>Other solutions are detailed in the Readme (link on the bottom of this page).</div>
 <div>-----</div>
-<div>Use the left and right arrows to select the build order step.</div>
+<div>Use the left and right arrow buttons to select the build order step.</div>
 <div>In case valid timings are available for all steps, click on the feather/hourglass</div>
 <div>to switch to the timer mode (updating the steps with a timer).</div>
-<div>In timer mode, you can increment/decrement the clock by 1 second with the arrows,</div>
-<div>start/stop the timer and set it back to <em>0:00</em>.</div>`;
+<div>In timer mode, you can increment/decrement the clock by 1 second with the</div>
+<div>arrow buttons, start/stop the timer and set it back to <em>0:00</em>.</div>`;
 
   htmlString += `
 <div>-----</div>
@@ -953,20 +1134,35 @@ function updateBOFromWidgets() {
  * Initialize the configuration window.
  */
 function initConfigWindow() {
+  // Pre-load error image (for potential installation)
+  let preloadErrorImager = new Image();
+  preloadErrorImager.src = ERROR_IMAGE;
+
   // Get the images available
   imagesGame = getImagesGame();
   imagesCommon = getImagesCommon();
   factionsList = getFactions();
   factionImagesFolder = getFactionImagesFolder();
 
-  // Update the title of the configuration page.
+  // Update the title of the configuration page
   updateTitle();
+
+  // Update the main configuration selection
+  updateMainConfigSelection();
 
   // Update the external BO website links
   updateExternalBOWebsites();
 
   // Update the information about RTS Overlay
   updateRTSOverlayInfo();
+
+  // Initialize the images selection utility
+  initImagesSelection();
+
+  // Update the library search
+  initBOFactionSelection();
+  readLibrary();
+  updateLibrarySearch();
 
   // Update the hotkeys tooltip for 'Diplay overlay'
   document.getElementById('diplay_overlay_tooltiptext').innerHTML =
@@ -976,8 +1172,6 @@ function initConfigWindow() {
   resetDataBOMsg();
   document.getElementById('bo_design').value = getWelcomeMessage();
   updateSalamanderIcon();
-  initImagesSelection();
-  showHideItemsBOValidity();
 
   // Set default sliders values
   document.getElementById('bo_fontsize').value = DEFAULT_BO_PANEL_FONTSIZE;
@@ -987,22 +1181,32 @@ function initConfigWindow() {
       DEFAULT_OVERLAY_ON_RIGHT_SIDE;
   updateBOFromWidgets();
 
+  // Show or hide elements
+  showHideItems();
+
   // Updating the variables when changing the game
   document.getElementById('select_game').addEventListener('input', function() {
-    gameName = document.getElementById('select_game').value;
+    const selectGame = document.getElementById('select_game');
+    gameName = selectGame.value;
+    gameFullName = selectGame.options[selectGame.selectedIndex].text;
 
     imagesGame = getImagesGame();
     factionsList = getFactions();
     factionImagesFolder = getFactionImagesFolder();
 
+    updateMainConfigSelection();
     updateExternalBOWebsites();
     updateRTSOverlayInfo();
+    initImagesSelection();
+    initBOFactionSelection();
+    readLibrary();
+    updateLibrarySearch();
 
     resetDataBOMsg();
     document.getElementById('bo_design').value = getWelcomeMessage();
     updateSalamanderIcon();
-    initImagesSelection();
-    showHideItemsBOValidity();
+
+    showHideItems();
   });
 
   // Panel is automatically updated when the BO design panel is changed
@@ -1032,6 +1236,26 @@ function initConfigWindow() {
   document.getElementById('left_right_side')
       .addEventListener('input', function() {
         updateBOFromWidgets();
+      });
+
+  // Update the library search for each new input or faction selection
+  document.getElementById('bo_faction_text')
+      .addEventListener('input', function() {
+        updateLibrarySearch();
+      });
+
+  document.getElementById('bo_faction_select_widget')
+      .addEventListener('input', function() {
+        updateFactionImageSelection();
+        updateLibraryValidKeys();
+        updateLibrarySearch();
+      });
+
+  document.getElementById('bo_opponent_faction_select_widget')
+      .addEventListener('input', function() {
+        updateFactionImageSelection();
+        updateLibraryValidKeys();
+        updateLibrarySearch();
       });
 }
 
@@ -1177,32 +1401,35 @@ function getImagesCommon() {
 /**
  * Check if a build order fulfills the correct key conditions.
  *
+ * @param {Object} buildOrder    Build order to check.
  * @param {Object} keyCondition  Dictionary with the keys to look for and their
  *                               value (to consider as valid), null to skip it.
  *
- * @returns true if no key condition or key conditions are correct.
+ * @returns true if no key condition or all key conditions are correct.
  */
-function checkBuildOrderKeyValues(keyCondition = null) {
-  if (!keyCondition) {  // no key condition to check
+function checkBuildOrderKeyValues(buildOrder, keyCondition = null) {
+  if (keyCondition === null) {  // no key condition to check
     return true;
   }
 
-  for (const [key, value] of Object.entries(keyCondition)) {
-    if (key in dataBO) {
-      const dataCheck = dataBO[key];
+  // Loop  on the key conditions
+  for (const [key, target] of Object.entries(keyCondition)) {
+    if (key in buildOrder) {
+      const dataCheck = buildOrder[key];
       // Any build order data value is valid
-      if (['any', 'Any', 'Generic'].includes(dataCheck)) {
+      if (['any', 'Any', 'Generic'].includes(dataCheck) ||
+          ['any', 'Any'].includes(target)) {
         continue;
       }
-      const isList = Array.isArray(dataCheck);
-      if ((isList && !dataCheck.includes(value)) ||
-          (!isList && (value !== dataCheck))) {
+      const isArray = Array.isArray(dataCheck);
+      if ((isArray && (!dataCheck.includes(target))) ||
+          (!isArray && (target !== dataCheck))) {
         return false;  // at least one key condition not met
       }
     }
   }
 
-  return true;
+  return true;  // all conditions met
 }
 
 /**
@@ -2022,7 +2249,7 @@ function timerBuildOrderCall() {
     buildOrderTimer['time_int'] = Math.floor(buildOrderTimer['time_sec']);
 
     // Time was updated (or no valid note IDs)
-    if ((buildOrderTimer['last_time_int'] != buildOrderTimer['time_int']) ||
+    if ((buildOrderTimer['last_time_int'] !== buildOrderTimer['time_int']) ||
         (buildOrderTimer['last_steps_ids'].length === 0)) {
       buildOrderTimer['last_time_int'] = buildOrderTimer['time_int'];
 
@@ -2105,20 +2332,27 @@ function BODesignDropHandler(ev) {
 
 /**
  * Save the build order in a file.
+ *
+ * @param {Object} data  Build order content, null
+ *                       to use the 'bo_design' panel content.
  */
-function saveBOToFile() {
+function saveBOToFile(data = null) {
+  // Get from 'bo_design' panel if BO not provided
+  if (!data) {
+    data = JSON.parse(document.getElementById('bo_design').value);
+  }
+
   // Create a file with the BO content
-  const file = new Blob(
-      [document.getElementById('bo_design').value], {type: 'text/plain'});
+  const file = new Blob([JSON.stringify(data, null, 4)], {type: 'text/plain'});
 
   // Add file content in an object URL with <a> tag
   const link = document.createElement('a');
   link.href = URL.createObjectURL(file);
 
   // File name
-  if (dataBO && Object.keys(dataBO).includes('name')) {
+  if (data && Object.keys(data).includes('name')) {
     // Replace all spaces by '_'
-    link.download = dataBO.name.replace(/\s+/g, '_') + '.json';
+    link.download = data.name.replace(/\s+/g, '_') + '.json';
   } else {
     link.download = 'rts_overlay.json';
   }
@@ -2126,6 +2360,519 @@ function saveBOToFile() {
   // Add click event to <a> tag to save file
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+/**
+ * Delete the selected build order.
+ */
+function deleteSelectedBO() {
+  if (!selectedBOFromLibrary) {
+    alert('No build order from library currently selected.');
+    return;
+  }
+  const keyName = gameName + '|' + selectedBOFromLibrary;
+
+  if (!localStorage.getItem(keyName)) {
+    alert('No build order in local storage with key name \'' + keyName + '\'.');
+    return;
+  }
+
+  const text = 'Are you sure you want to delete the build order \'' +
+      selectedBOFromLibrary + '\' (' + gameFullName +
+      ') from your local storage?\nThis cannot be undone.';
+  if (confirm(text)) {
+    localStorage.removeItem(keyName);
+    readLibrary();
+    updateLibrarySearch();
+    alert('Build order removed: \'' + selectedBOFromLibrary + '\'.');
+  }
+}
+
+/**
+ * Delete all build orders.
+ */
+function deleteAllBOs() {
+  const text = 'Are you sure you want to delete ALL BUILD ORDERS (from ' +
+      gameFullName + ') from your local storage?' +
+      '\nThis cannot be undone.';
+
+  if (confirm(text)) {
+    const gamePrefix = gameName + '|';
+
+    // List all keys to remove (without removing, to keep localStorage intact)
+    let keysToRemove = [];
+    for (let i = 0, len = localStorage.length; i < len; i++) {
+      const keyName = localStorage.key(i);
+      if (keyName.startsWith(gamePrefix)) {
+        keysToRemove.push(keyName);
+      }
+    }
+
+    // Remove all the requested keys
+    for (const keyName of keysToRemove) {
+      localStorage.removeItem(keyName);
+    }
+
+    readLibrary();
+    updateLibrarySearch();
+    alert('All build orders from ' + gameFullName + ' removed.');
+  }
+}
+
+/**
+ * Export all build orders.
+ */
+function exportAllBOs() {
+  const gamePrefix = gameName + '|';
+  for (let i = 0, len = localStorage.length; i < len; i++) {
+    const keyName = localStorage.key(i);
+    if (keyName.startsWith(gamePrefix)) {
+      saveBOToFile(JSON.parse(localStorage.getItem(keyName)));
+    }
+  }
+}
+
+/**
+ * Add current BO to the library (local storage).
+ */
+function addToLocalStorage() {
+  if (dataBO) {
+    const keyName = gameName + '|' + dataBO['name'];
+
+    if (localStorage.getItem(keyName)) {
+      const text = 'There is already a build order with name \'' +
+          dataBO['name'] + '\' for ' + gameFullName +
+          '.\nDo you want to replace it with your new build order?';
+      if (!confirm(text)) {
+        return;
+      }
+    } else {
+      const text = 'Do you want to save your build order with name \'' +
+          dataBO['name'] + '\' for ' + gameFullName + '?';
+      if (!confirm(text)) {
+        return;
+      }
+    }
+
+    localStorage.setItem(keyName, JSON.stringify(dataBO));
+    readLibrary();
+    updateLibrarySearch();
+    alert(
+        'Build order saved with key name \'' + keyName +
+        '\' in local storage.');
+
+  } else {
+    alert('Build order is not valid. It cannot be saved.');
+  }
+}
+
+/**
+ * Compute the Levenshtein distance between two words.
+ *
+ * @param {string} strA  First word to compare.
+ * @param {string} strB  Second word to compare.
+ *
+ * @returns Requested Levenshtein distance.
+ */
+function computeLevenshtein(strA, strB) {
+  const lenA = strA.length;
+  const lenB = strB.length;
+
+  let matrix = Array(lenA + 1);
+  for (let i = 0; i <= lenA; i++) {
+    matrix[i] = Array(lenB + 1);
+  }
+
+  for (let i = 0; i <= lenA; i++) {
+    matrix[i][0] = i;
+  }
+
+  for (let j = 0; j <= lenB; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= lenA; i++) {
+    for (let j = 1; j <= lenB; j++) {
+      if (strA[i - 1] === strB[j - 1]) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1, matrix[i][j - 1] + 1,
+            matrix[i - 1][j - 1] + 1);
+      }
+    }
+  }
+
+  return matrix[lenA][lenB];
+}
+
+/**
+ * Compute the minimal Levenshtein error score, by sliding a small string on a
+ * larger one. It is assumed that the smaller string is not included in the
+ * larger one.
+ *
+ * @param {string} strSmall  Smaller string to compare.
+ * @param {string} strLarge  Larger string to compare.
+ *
+ * @returns Minimal Levenshtein error score.
+ */
+function computeSameSizeLevenshtein(strSmall, strLarge) {
+  // Check string lengths
+  const lenSmall = strSmall.length;
+  const lenLarge = strLarge.length;
+  console.assert(
+      lenSmall <= lenLarge, '\'strSmall\' must be smaller than \'strLarge\'.');
+
+  // Normal Levenshtein computation is same size
+  if (lenSmall === lenLarge) {
+    return computeLevenshtein(strA, strB);
+  }
+
+  // Start on the first part of the larger string
+  let minScore = computeLevenshtein(strSmall, strLarge.slice(0, lenSmall));
+  if (minScore === 1) {  // Cannot be smaller than 1 if not included
+    return 1;
+  }
+
+  // Slide on the larger string
+  const maxId = lenLarge - lenSmall;
+
+  for (let i = 1; i <= maxId; i++) {
+    const currentScore =
+        computeLevenshtein(strSmall, strLarge.slice(i, i + lenSmall));
+    if (currentScore === 1) {  // Cannot be smaller than 1 if not included
+      return 1;
+    } else if (currentScore < minScore) {
+      minScore = currentScore;
+    }
+  }
+
+  return minScore;
+}
+
+/**
+ * Compute the Levenshtein score by comparing same-size tokens, and apply a
+ * threshold to filter wrong matches.
+ *
+ * @param {float} ratio_thres  Ratio applied on the smallest word length.
+ *                             The ratio of errors (Levenshtein score) must be
+ *                             smaller than this threshold.
+ * @param {string} strA        First string to compare.
+ * @param {string} strB        Second string to compare.
+ *
+ * @returns Minimal Levenshtein score, -1 if match is too bad (threshold).
+ */
+function computeSameSizeLevenshteinThreshold(ratio_thres, strA, strB) {
+  // String lengths
+  const lenA = strA.length;
+  const lenB = strB.length;
+
+  // Select smallest string
+  const smallA = lenA <= lenB;
+  const strSmall = smallA ? strA : strB;
+  const strLarge = smallA ? strB : strA;
+
+  // Score of 0 (no error) if small string fully included in larger one.
+  if (strLarge.includes(strSmall)) {
+    return 0;
+  }
+
+  // Compute error threshold
+  const lenSmall = smallA ? lenA : lenB;
+  const errorThreshold = Math.floor(ratio_thres * lenSmall);
+
+  // Not valid if not included and threshold does not allow any error
+  if (errorThreshold < 1) {
+    return -1;
+  }
+
+  // Compute the same-size Levenshtein error
+  const score = computeSameSizeLevenshtein(strSmall, strLarge);
+
+  // Check if lower or equal to error threshold
+  return (score > errorThreshold) ? -1 : score;
+}
+
+/**
+ * Read the library content and update the corresponding variables.
+ */
+function readLibrary() {
+  library = {};
+
+  const gamePrefix = gameName + '|';
+  for (let i = 0, len = localStorage.length; i < len; i++) {
+    const keyName = localStorage.key(i);
+    if (keyName.startsWith(gamePrefix)) {
+      const nameBO = keyName.replace(gamePrefix, '');
+      library[nameBO] = JSON.parse(localStorage.getItem(keyName));
+    }
+  }
+
+  updateLibraryValidKeys();
+}
+
+/**
+ * Get key condition dictionary for build order sorting.
+ *
+ * @returns Requested key condition dictionary.
+ */
+function getKeyCondition() {
+  const playerFactionName = FACTION_FIELD_NAMES[gameName]['player'];
+  const opponentFactionName = FACTION_FIELD_NAMES[gameName]['opponent'];
+
+  let keyCondition = {};
+  if (playerFactionName) {
+    keyCondition[playerFactionName] =
+        document.getElementById('bo_faction_select_widget').value;
+  }
+  if (opponentFactionName) {
+    keyCondition[opponentFactionName] =
+        document.getElementById('bo_opponent_faction_select_widget').value;
+  }
+
+  return keyCondition;
+}
+
+/**
+ * Update the library of valid keys (filtering) based on the player
+ * (and optionally) opponent faction.
+ */
+function updateLibraryValidKeys() {
+  // Get key condition dictionary
+  const keyCondition = getKeyCondition();
+
+  // Fill valid keys based on the dictionary
+  libraryValidKeys = [];
+  for (const [key, dataBO] of Object.entries(library)) {
+    if (checkBuildOrderKeyValues(dataBO, keyCondition)) {
+      libraryValidKeys.push(key);
+    }
+  }
+}
+
+/**
+ * Compare two key names based on score.
+ *
+ * @param {Object} librayKeyScores  Score for each key of the library.
+ * @param {string} keyA             First key to compare.
+ * @param {string} keyB             Second key to compare.
+ *
+ * @returns -1, 0 or +1, to be used with the 'sort' function.
+ */
+function compareLibraryKeys(librayKeyScores, keyA, keyB) {
+  // The lowest score will appear first.
+  const scoreA = librayKeyScores[keyA];
+  const scoreB = librayKeyScores[keyB];
+
+  if (scoreA < scoreB) {
+    return -1;
+  } else if (scoreA > scoreB) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+/**
+ * Compare two library BO names based on target faction(s).
+ *
+ * @param {Object} keyCondition  Dictionary with the keys to look for and their
+ *                               value (to consider as valid).
+ * @param {string} itemA         First library BO to compare.
+ * @param {string} itemB         Second library BO to compare.
+ *
+ * @returns -1, 0 or +1, to be used with the 'sort' function.
+ */
+function compareLibraryFaction(keyCondition, itemA, itemB) {
+  for (const [fieldName, targetValue] of Object.entries(keyCondition)) {
+    const validA = library[itemA][fieldName] === targetValue;
+    const validB = library[itemB][fieldName] === targetValue;
+
+    if (validA && !validB) {
+      return -1;
+    } else if (!validA && validB) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Remove the 'search_key_select' for all the search lines results.
+ */
+function clearSearchResultSelect() {
+  let elements = document.getElementsByClassName('search_key_line');
+
+  Array.prototype.forEach.call(elements, function(el) {
+    document.getElementById(el.id).classList.remove('search_key_select');
+  });
+}
+
+/**
+ * Update the class of a search result line when hovering on it.
+ *
+ * @param {int} id  ID of the search result line.
+ */
+function mouseOverSearchResult(id) {
+  clearSearchResultSelect();
+
+  document.getElementById('search_key_line_' + id)
+      .classList.add('search_key_select');
+}
+
+/**
+ * Update the selected BO when clicking on a search result line.
+ *
+ * @param {string} key  Key of the selected build order.
+ */
+function mouseClickSearchResult(key) {
+  // Set the build order design panel content to the one of the library,
+  // and update the BO display accordingly.
+  console.assert(key in library, 'Library has not key \'' + key + '\'.')
+  document.getElementById('bo_design').value = JSON.stringify(library[key]);
+  updateDataBO();
+  formatBuildOrder();
+  updateBOPanel(false);
+
+  // Update build order search lines
+  let boSearchText =
+      '<div " class="search_key_line">Selected build order:</div>';
+  boSearchText +=
+      '<div " class="search_key_line search_key_select">' + key + '</div>';
+
+  document.getElementById('bo_faction_text').value = '';
+  document.getElementById('bo_search_results').innerHTML = boSearchText;
+
+  // Save value of selected build order
+  selectedBOFromLibrary = key;
+  showHideItems();
+}
+
+/**
+ * Updates based on the library search.
+ */
+function updateLibrarySearch() {
+  // Value to search in lower case
+  const searchStr =
+      document.getElementById('bo_faction_text').value.toLowerCase();
+
+  // Selected BO is null if the search field is not empty
+  if (searchStr !== '') {
+    selectedBOFromLibrary = null;
+  }
+
+  let boSearchText = '';  // Text printed for the BO search
+
+  // Library is empty
+  if (Object.keys(library).length === 0) {
+    boSearchText +=
+        '<div>No build order in library for <i>' + gameFullName + '</i>.</div>';
+    if (gameName in EXTERNAL_BO_WEBSITES) {
+      boSearchText +=
+          '<div>Download one <b>from an external website</b> or <b>design your own</b>.</div>';
+    } else {
+      boSearchText +=
+          '<div><b>Design your own</b> build order in the corresponding panel.</div>';
+    }
+  }
+  // No build order for the currently selected faction condition
+  else if (libraryValidKeys.length === 0) {
+    boSearchText += '<div>No build order in your library for faction <b>' +
+        document.getElementById('bo_faction_select_widget').value + '</b>';
+    if (FACTION_FIELD_NAMES[gameName]['opponent']) {
+      boSearchText += ' with opponent <b>' +
+          document.getElementById('bo_opponent_faction_select_widget').value +
+          '</b>';
+    }
+    boSearchText += '.</div>';
+  }
+  // At least one valid build order for the currently selected faction condition
+  else {
+    // Nothing added in the search field
+    if (searchStr.length === 0) {
+      const factionName =
+          document.getElementById('bo_faction_select_widget').value;
+      boSearchText += '<div>Select the player faction above (' +
+          factionsList[factionName][0] + ': <b>' + factionName + '</b>)';
+
+      if (FACTION_FIELD_NAMES[gameName]['opponent']) {
+        const opponentFactionName =
+            document.getElementById('bo_opponent_faction_select_widget').value;
+        boSearchText += ' and opponent faction (' +
+            factionsList[opponentFactionName][0] + ': <b>' +
+            opponentFactionName + '</b>)';
+      }
+      boSearchText += '.</div>';
+
+      boSearchText +=
+          '<div>Then, add <b>keywords</b> in the text field to search any build order from your library.</div>';
+      boSearchText +=
+          '<div>Alternatively, use <b>a single space</b> to select the first ' +
+          MAX_SEARCH_RESULTS + ' build orders.</div>';
+      boSearchText +=
+          '<div>Finally, click on the requested build order from the list (will appear here).</div>';
+    }
+    // Look for pattern in search field
+    else {
+      let librarySortedKeys = [];
+
+      // Get key condition dictionary
+      const keyCondition = getKeyCondition();
+
+      // If not single space, look for best pattern matching
+      if (searchStr !== ' ') {
+        // Compute metrics for
+        let librayKeyScores = {};
+        for (const key of libraryValidKeys) {
+          const keyLowerCase = key.toLowerCase();
+          const score = computeSameSizeLevenshteinThreshold(
+              LEVENSHTEIN_RATIO_THRESHOLD, searchStr, keyLowerCase);
+          if (score >= 0) {  // Valid match
+            librayKeyScores[key] = score;
+            librarySortedKeys.push(key);
+          }
+        }
+        // Sort the keys based on the metrics above
+        librarySortedKeys.sort(
+            (a, b) => compareLibraryKeys(librayKeyScores, a, b));
+
+        // Only keep the first results
+        librarySortedKeys = librarySortedKeys.slice(0, MAX_SEARCH_RESULTS);
+
+        // Sort by faction requirement
+        librarySortedKeys.sort(
+            (a, b) => compareLibraryFaction(keyCondition, a, b));
+      }
+      // Take the first results, sorting only by faction requirement
+      else {
+        // Copy full list of valid keys
+        librarySortedKeys = libraryValidKeys.slice();
+
+        // Sort by faction requirement
+        librarySortedKeys.sort(
+            (a, b) => compareLibraryFaction(keyCondition, a, b));
+
+        // Only keep the first results
+        librarySortedKeys = librarySortedKeys.slice(0, MAX_SEARCH_RESULTS);
+      }
+
+      // Print the corresponding build order keys (names) with
+      // hovering and clicking interactions.
+      let keyID = 0;
+      for (const key of librarySortedKeys) {
+        boSearchText += '<div id="search_key_line_' + keyID +
+            '" class="search_key_line" onmouseover="mouseOverSearchResult(' +
+            keyID +
+            ')" onmouseleave="clearSearchResultSelect()" onclick="mouseClickSearchResult(\'' +
+            key + '\')">' + key + '</div>';
+        keyID++;
+      }
+    }
+  }
+
+  // Print text for the BO search
+  document.getElementById('bo_search_results').innerHTML = boSearchText;
+  showHideItems();
 }
 
 /**
@@ -2332,10 +3079,11 @@ function contentArrayToDiv(content) {
 function getArrayInstructions(
     evaluateTimeFlag, selectFactionLines = null, externalBOLines = null) {
   let result = [
-    'Replace the text in the panel below by any build order in correct JSON format, then click',
-    'on \'Display overlay\' (appearing on the left side of the screen when the build order is valid).',
-    'You will need an Always On Top application to keep the overlay visible while playing.',
-    'Hover briefly on the \'Display overlay\' button to get more information.'
+    'Replace the text in the panel below by any build order in correct JSON format, then click on \'Display overlay\'',
+    '(appearing on the left side of the screen when the build order is valid). You will need an Always On Top application',
+    'to keep the overlay visible while playing. Hover briefly on the \'Display overlay\' button to get more information.',
+    '',
+    'Filter and select (or delete) your stored build orders in the <b>From library</b> section.'
   ];
 
   if (externalBOLines) {
@@ -2347,7 +3095,7 @@ function getArrayInstructions(
     '',
     'You can' + (externalBOLines ? ' also' : '') +
         ' manually write your build order as JSON format, using the following buttons',
-    'on the left (some buttons only appear when the build order is valid):',
+    'from the <b>Design your own</b> section (some buttons only appear when the build order is valid):',
     '&nbsp &nbsp - \'Reset build order\' : Reset the build order to a minimal template (adapt the initial fields).',
     '&nbsp &nbsp - \'Add step\' : Add a step to the build order.',
     '&nbsp &nbsp - \'Format\' : Format the build order to a proper JSON indentation.',
@@ -2364,8 +3112,9 @@ function getArrayInstructions(
 
   const imagesSelectionLines = [
     '',
-    'In the \'Image selection\' section below, you can get images by selecting a category and clicking on the',
-    'requested image (this will copy its value to the clipboard). You can then paste it anywhere in the text panel.'
+    'In the \'Image selection\' section on the bottom right (select first <b>Design your own</b>), you can get images',
+    'by selecting a category and clicking on the requested image (this will copy its value to the clipboard).',
+    'You can then paste it anywhere in the text panel.'
   ];
   result = result.concat(imagesSelectionLines);
 
@@ -2378,12 +3127,13 @@ function getArrayInstructions(
     'The build order validity is constantly checked. If it is not valid, a message appears on top of the text panel',
     'to explain what the issue is. This message will also tell if the build order can use the timing feature.',
     '',
-    'To save your build order, click on \'Save build order\' (on the left), which will save it as a JSON file.',
-    'Alternatively, you can click on \'Copy to clipboard\', to copy the build order content, and paste it anywhere.',
-    'To load a build order, drag and drop a file with the build order on this panel (or replace the text manually).',
+    'To save your build order, click on \'Add to library\' (on the left when valid build order). This will save the build order',
+    'in your local storage, allowing you to load it from the <b>From library</b> section (persisting after re-opening the app).',
+    'You can also click on \'Export file\' to save it as a JSON file or  \'Copy to clipboard\', to copy the build order content.',
+    'To re-load a build order, drag and drop a file with the build order on the bottom text panel (or replace the text manually).',
     '',
-    'You can download a copy of the RTS Overlay by clicking the installation button in the URL bar. Firefox users',
-    'may need to install a browser add-on beforehand ("Progressive Web Apps For Firefox" by Filip Štamcar).'
+    'It is highly recommended to download a local copy of RTS Overlay to improve the speed, work offline',
+    'and customize your experience. Hover briefly on \'Download Overlay\' for more information.'
   ];
   return result.concat(validityFontSizeSavePart);
 }
@@ -3002,7 +3752,7 @@ function getImagesAoE2() {
             'castle':
                 'CastleAgeUnique.png#Castle_aoe2DE.png#ConscriptionDE.png#HoardingsDE.png#Petard_aoe2DE.png#SapperDE.png#SpiesDE.png#Trebuchet_aoe2DE.png#Unique-tech-imperial.jpg',
             'civilization':
-                'CivIcon-Armenians.png#CivIcon-Aztecs.png#CivIcon-Bengalis.png#CivIcon-Berbers.png#CivIcon-Bohemians.png#CivIcon-Britons.png#CivIcon-Bulgarians.png#CivIcon-Burgundians.png#CivIcon-Burmese.png#CivIcon-Byzantines.png#CivIcon-Celts.png#CivIcon-Chinese.png#CivIcon-Cumans.png#CivIcon-Dravidians.png#CivIcon-Ethiopians.png#CivIcon-Franks.png#CivIcon-Georgians.png#CivIcon-Goths.png#CivIcon-Gurjaras.png#CivIcon-Hindustanis.png#CivIcon-Huns.png#CivIcon-Incas.png#CivIcon-Indians.png#CivIcon-Italians.png#CivIcon-Japanese.png#CivIcon-Khmer.png#CivIcon-Koreans.png#CivIcon-Lithuanians.png#CivIcon-Magyars.png#CivIcon-Malay.png#CivIcon-Malians.png#CivIcon-Mayans.png#CivIcon-Mongols.png#CivIcon-Persians.png#CivIcon-Poles.png#CivIcon-Portuguese.png#CivIcon-Romans.png#CivIcon-Saracens.png#CivIcon-Sicilians.png#CivIcon-Slavs.png#CivIcon-Spanish.png#CivIcon-Tatars.png#CivIcon-Teutons.png#CivIcon-Turks.png#CivIcon-Vietnamese.png#CivIcon-Vikings.png#question_mark.png',
+                'CivIcon-Armenians.png#CivIcon-Aztecs.png#CivIcon-Bengalis.png#CivIcon-Berbers.png#CivIcon-Bohemians.png#CivIcon-Britons.png#CivIcon-Bulgarians.png#CivIcon-Burgundians.png#CivIcon-Burmese.png#CivIcon-Byzantines.png#CivIcon-Celts.png#CivIcon-Chinese.png#CivIcon-Cumans.png#CivIcon-Dravidians.png#CivIcon-Ethiopians.png#CivIcon-Franks.png#CivIcon-Georgians.png#CivIcon-Goths.png#CivIcon-Gurjaras.png#CivIcon-Hindustanis.png#CivIcon-Huns.png#CivIcon-Incas.png#CivIcon-Indians.png#CivIcon-Italians.png#CivIcon-Japanese.png#CivIcon-Khmer.png#CivIcon-Koreans.png#CivIcon-Lithuanians.png#CivIcon-Magyars.png#CivIcon-Malay.png#CivIcon-Malians.png#CivIcon-Mayans.png#CivIcon-Mongols.png#CivIcon-Persians.png#CivIcon-Poles.png#CivIcon-Portuguese.png#CivIcon-Romans.png#CivIcon-Saracens.png#CivIcon-Sicilians.png#CivIcon-Slavs.png#CivIcon-Spanish.png#CivIcon-Tatars.png#CivIcon-Teutons.png#CivIcon-Turks.png#CivIcon-Vietnamese.png#CivIcon-Vikings.png#question_mark.png#question_mark_black.png',
             'defensive_structures':
                 'Bombard_tower_aoe2DE.png#Donjon_aoe2DE.png#FortifiedWallDE.png#Gate_aoe2de.png#Krepost_aoe2de.png#Outpost_aoe2de.png#Palisade_gate_aoe2DE.png#Palisade_wall_aoe2de.png#Stone_wall_aoe2de.png#Tower_aoe2de.png',
             'dock':
@@ -3050,7 +3800,7 @@ function getImagesAoE2() {
 function getFactionsAoE2() {
   // AoE2 civilization Icons (with 3 letters shortcut)
   return {
-    'Generic': ['GEN', 'question_mark.png'],
+    'Generic': ['GEN', 'question_mark_black.png'],
     'Armenians': ['ARM', 'CivIcon-Armenians.png'],
     'Aztecs': ['AZT', 'CivIcon-Aztecs.png'],
     'Bengalis': ['BEN', 'CivIcon-Bengalis.png'],
@@ -3118,10 +3868,9 @@ function getInstructionsAoE2() {
     'The \'select faction\' category provides all the available civilization names for the \'civilization\' field.'
   ];
   const externalBOLines = [
-    'You can get many build orders with the requested format from buildorderguide.com',
-    '(you can use the shortcut on the left).',
-    'Select a build order on buildorderguide.com, click on \'Copy to clipboard for RTS Overlay\',',
-    'then paste the content in the text panel below.'
+    'In the <b>From external website</b> section, you can get many build orders with the requested format from',
+    'buildorderguide.com (you can use the shortcut on the left). Select a build order on buildorderguide.com,',
+    'click on \'Copy to clipboard for RTS Overlay\', then paste the content in the text panel below.'
   ];
   return contentArrayToDiv(
       getArrayInstructions(true, selectFactionLines, externalBOLines));
@@ -3655,10 +4404,9 @@ function getInstructionsAoE4() {
     'The \'select faction\' category provides all the available civilization names for the \'civilization\' field.'
   ];
   const externalBOLines = [
-    'You can get many build orders with the requested format from aoe4guides.com or age4builder.com',
-    '(you can use the shortcuts on the left).',
-    'On aoe4guides.com, select a build order, click on the 3 dots (upper right corner),',
-    'click on the \'Overlay Tool\' copy button, and paste the content below.',
+    'In the <b>From external website</b> section, you can get many build orders with the requested format from',
+    'aoe4guides.com or age4builder.com (use the shortcuts on the left). On aoe4guides.com, select a build order,',
+    'click on the 3 dots (upper right corner), click on the \'Overlay Tool\' copy button, and paste the content below.',
     'On age4builder.com, select a build order, click on the salamander icon, and paste the content below.'
   ];
   return contentArrayToDiv(
