@@ -468,6 +468,37 @@ function checkValidBO() {
 }
 
 /**
+ * Convert a note line to HTML with text and images.
+ *
+ * @param {string} note  Note line from a build order.
+ *
+ * @returns HTML code corresponding to the requested line, with text and images.
+ */
+function noteToTextImages(note) {
+  let result = '';
+
+  // Split note line between text and images
+  const splitLine = splitNoteLine(note);
+  const splitCount = splitLine.length;
+
+  if (splitCount > 0) {
+    // loop on the line parts
+    for (let splitID = 0; splitID < splitCount; splitID++) {
+      // Check if it is a valid image and get its path
+      const imagePath = getImagePath(splitLine[splitID]);
+
+      if (imagePath) {  // image
+        result += getBOImageHTML(imagePath);
+      } else {  // text
+        result += splitLine[splitID];
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
  * Get the content of the BO panel.
  *
  * @param {boolean} overlayFlag  true for overlay, false for
@@ -592,23 +623,8 @@ function getBOPanelContent(overlayFlag, BOStepID) {
             (noteID === 0 ? selectedStep.time : '') + '</div>';
       }
 
-      // Split note line between text and images
-      const splitLine = splitNoteLine(note);
-      const splitCount = splitLine.length;
-
-      if (splitCount > 0) {
-        // loop on the line parts
-        for (let splitID = 0; splitID < splitCount; splitID++) {
-          // Check if it is a valid image and get its path
-          imagePath = getImagePath(splitLine[splitID]);
-
-          if (imagePath) {  // image
-            htmlString += getBOImageHTML(imagePath);
-          } else {  // text
-            htmlString += splitLine[splitID];
-          }
-        }
-      }
+      // Convert note line to HTML with text and images
+      htmlString += noteToTextImages(note);
 
       htmlString += '</div></nobr>';
     }
@@ -649,7 +665,8 @@ function showHideItems() {
 
   const saveItems = ['save_bo_text', 'save_row'];
 
-  const displayItems = ['adapt_display_overlay', 'diplay_overlay'];
+  const displayItems =
+      ['adapt_display_overlay', 'single_panel_page', 'diplay_overlay'];
 
   // Items corresponding to flex boxes
   const flexItems = [
@@ -2891,6 +2908,443 @@ function updateLibrarySearch() {
 }
 
 /**
+ * Add space indentation.
+ *
+ * @param {int} indentCount  Number of indentations to make.
+ * @param {int} indentSize   Number of spaces per indentation.
+ *
+ * @returns String with the indentations as sequence of spaces.
+ */
+function indentSpace(indentCount, indentSize = 4) {
+  return ' '.repeat(indentCount * indentSize);
+}
+
+/**
+ * Definition of a column for BO in a single panel.
+ */
+class SinglePanelColumn {
+  /**
+   * Constructor.
+   *
+   * @param {string} field               Name of the field to display.
+   * @param {string} image               Path of the image on top of
+   *                                     the column (null to hide).
+   * @param {boolean} italic             true for italic.
+   * @param {boolean} bold               true for bold.
+   * @param {boolean} hideIfAbsent       true to  hide if fully absent.
+   * @param {boolean} displayIfPositive  true to display only if it is > 0,
+   *                                     should be 'false' for non-integers.
+   * @param {Array} backgroundColor      Color of the background,
+   *                                     null to keep default.
+   * @param {string} textAlign           Value for 'text-align',
+   *                                     null for default.
+   */
+  constructor(
+      field, image = null, italic = false, bold = false, hideIfAbsent = false,
+      displayIfPositive = false, backgroundColor = null, textAlign = null) {
+    // Check input types
+    if (typeof field !== 'string' || (image && typeof image !== 'string') ||
+        (textAlign && typeof textAlign !== 'string')) {
+      throw 'SinglePanelColumn expected strings for \'field\', \'image\' and \'textAlign\'.';
+    }
+
+    if (typeof italic !== 'boolean' || typeof bold !== 'boolean' ||
+        typeof hideIfAbsent !== 'boolean' ||
+        typeof displayIfPositive !== 'boolean') {
+      throw 'SinglePanelColumn expected boolean for \'italic\',  \'bold\',  \'hideIfAbsent\' and  \'displayIfPositive\'.';
+    }
+
+    if (backgroundColor && !Array.isArray(backgroundColor)) {
+      throw 'SinglePanelColumn expected Array for \'backgroundColor\'.';
+    }
+
+    if (backgroundColor && backgroundColor.length !== 3) {
+      throw 'SinglePanelColumn \'backgroundColor\' must have a size of 3.';
+    }
+
+    this.field = field;
+    this.image = image;
+    this.italic = italic;
+    this.bold = bold;
+    this.hideIfAbsent = hideIfAbsent;
+    this.displayIfPositive = displayIfPositive;
+    this.backgroundColor = backgroundColor;
+    this.textAlign = textAlign;
+  }
+}
+
+/**
+ * Open a new page displaying the full BO in a single panel,
+ * based on table descriptions.
+ *
+ * @param {Array} columnsDescription  Array of 'SinglePanelColumn' describing
+ *                                    each column (except the notes).
+ * @param {Object} sectionsHeader     Disctionary describing the sections
+ *                                    headers, containing 'key', 'before'
+ *                                    and 'after', null if no section.
+ */
+function openSinglePanelPageFromDescription(
+    columnsDescription, sectionsHeader = null) {
+  // Check if valid BO data
+  if (!checkValidBO()) {
+    return;
+  }
+  const buildOrderData = dataBO['build_order'];
+
+  // Check which columns need to be displayed
+  let displayColumns = new Array(columnsDescription.length).fill(false);
+
+  for (const currentStep of buildOrderData) {  // loop on all BO steps
+    // Loop on all the columns
+    for (const [index, column] of columnsDescription.entries()) {
+      // Colmun already validated
+      if (displayColumns[index]) {
+        continue;
+      }
+
+      // Check valid description
+      if (!(column instanceof SinglePanelColumn)) {
+        throw 'Wrong column definition.';
+      }
+
+      // No need to hide the column (even if totally absent)
+      if (!column.hideIfAbsent) {
+        displayColumns[index] = true;
+        continue;
+      }
+
+      // Check field presence (potentially after splitting part_0/part_1/...)
+      let subPart = currentStep;
+      let valid = true;
+
+      for (const subField of column.field.split('/')) {
+        if (!(subField in subPart)) {
+          valid = false;
+          break;
+        }
+        subPart = subPart[subField];
+      }
+      if (valid) {
+        if (column.displayIfPositive) {  // Check if valid number
+          const num = Number(subPart);
+          if (Number.isInteger(num)) {
+            if (num > 0) {
+              displayColumns[index] = true;
+            }
+          } else {
+            console.log(
+                'Warning: Exepcted integer for \'' + field +
+                '\', but received \'' + fieldValue + '\'.');
+          }
+        } else {
+          displayColumns[index] = true;
+        }
+      }
+    }
+  }
+
+  // Update the columns description to only keep the ones to display
+  let updatedColumnsDescription = [];
+
+  for (const [index, column] of columnsDescription.entries()) {
+    if (displayColumns[index]) {
+      updatedColumnsDescription.push(column);
+    }
+  }
+
+  // Create window
+  let fullPageWindow = window.open('', '_blank');
+
+  // Prepare HTML main content
+  let htmlContent = '<!DOCTYPE html>\n<html lang="en">\n\n';
+  htmlContent += '<head>\n';
+
+  // Title
+  htmlContent +=
+      indentSpace(1) + '<title>RTS Overlay - ' + dataBO['name'] + '</title>\n';
+
+  // Style
+  htmlContent += indentSpace(1) + '<style>\n';
+
+  htmlContent += indentSpace(2) + 'body {\n';
+  htmlContent +=
+      indentSpace(3) + 'font-family: Arial, Helvetica, sans-serif;\n';
+  htmlContent += indentSpace(3) + 'background-color: rgb(220, 220, 220);\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + 'table {\n';
+  htmlContent += indentSpace(3) + 'color: rgb(255, 255, 255);\n';
+  htmlContent += indentSpace(3) + 'background-color: rgb(70, 70, 70);\n';
+  htmlContent += indentSpace(3) + 'margin: 0 auto;\n';
+  htmlContent += indentSpace(3) + 'border-radius: 15px;\n';
+  htmlContent += indentSpace(3) + 'border-collapse: collapse;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + 'td {\n';
+  htmlContent += indentSpace(3) + 'text-align: center;\n';
+  htmlContent += indentSpace(3) + 'vertical-align: middle;\n';
+  htmlContent += indentSpace(3) + 'padding: 10px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + 'img {\n';
+  htmlContent += indentSpace(3) + 'vertical-align: middle;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.note {\n';
+  htmlContent += indentSpace(3) + 'text-align: left;\n';
+  htmlContent += indentSpace(3) + 'padding-right: 25px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.full_line {\n';
+  htmlContent += indentSpace(3) + 'text-align: left;\n';
+  htmlContent += indentSpace(3) + 'font-weight: bold;\n';
+  htmlContent += indentSpace(3) + 'padding-left: 25px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.full_line img {\n';
+  htmlContent += indentSpace(3) + 'margin-right: 10px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.border_top {\n';
+  htmlContent += indentSpace(3) + 'position: relative;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.border_top::after {\n';
+  htmlContent += indentSpace(3) + 'content: \'\';\n';
+  htmlContent += indentSpace(3) + 'position: absolute;\n';
+  htmlContent += indentSpace(3) + 'top: 0;\n';
+  htmlContent += indentSpace(3) + 'left: 2.5%;\n';
+  htmlContent += indentSpace(3) + 'width: 95%;\n';
+  htmlContent += indentSpace(3) + 'border: 1px solid rgb(150, 150, 150);\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + 'button {\n';
+  htmlContent += indentSpace(3) + 'background-color: rgb(255, 255, 255);\n';
+  htmlContent += indentSpace(3) + 'border: 1px rgb(0, 0, 0) solid;\n';
+  htmlContent += indentSpace(3) + 'border-radius: 5px;\n';
+  htmlContent += indentSpace(3) + 'padding-top: 3px;\n';
+  htmlContent += indentSpace(3) + 'padding-bottom: 3px;\n';
+  htmlContent += indentSpace(3) + 'padding-left: 6px;\n';
+  htmlContent += indentSpace(3) + 'padding-right: 6px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + 'button:hover {\n';
+  htmlContent += indentSpace(3) + 'box-shadow: 2px 2px 2px rgb(0, 0, 0);\n';
+  htmlContent += indentSpace(3) + 'position: relative;\n';
+  htmlContent += indentSpace(3) + 'left: -2px;\n';
+  htmlContent += indentSpace(3) + 'top: -2px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  htmlContent += indentSpace(2) + '.column-0 {\n';
+  htmlContent += indentSpace(3) + 'padding-left: 25px;\n';
+  htmlContent += indentSpace(2) + '}\n\n';
+
+  // Style from column description
+  for (const [index, column] of updatedColumnsDescription.entries()) {
+    if (column.italic || column.bold || column.backgroundColor ||
+        column.textAlign) {
+      htmlContent += indentSpace(2) + '.column-' + index.toString() + ' {\n';
+
+      if (column.italic) {
+        htmlContent += indentSpace(3) + 'font-style: italic;\n';
+      }
+      if (column.bold) {
+        htmlContent += indentSpace(3) + 'font-weight: bold;\n';
+      }
+      if (column.backgroundColor) {
+        color = column.backgroundColor;
+        console.assert(
+            color.length == 3, 'Background color length should be of size 3.');
+        htmlContent += indentSpace(3) + 'background-color: rgb(' +
+            color[0].toString() + ', ' + color[1].toString() + ', ' +
+            color[2].toString() + ');\n';
+      }
+      if (column.textAlign) {
+        htmlContent +=
+            indentSpace(3) + 'text-align: ' + column.textAlign + ';\n';
+      }
+      htmlContent += indentSpace(2) + '}\n\n';
+    }
+  }
+
+  htmlContent += indentSpace(1) + '</style>\n\n';
+  htmlContent += '</head>\n\n';
+
+  // Main body
+  htmlContent += '<body>\n';
+  htmlContent += indentSpace(1) + '<table>\n';
+
+  // Icons header
+  htmlContent += indentSpace(2) + '<tr id="header">\n';
+
+  for (const column of updatedColumnsDescription) {
+    if (column.image) {
+      htmlContent +=
+          indentSpace(3) + '<td>' + getBOImageHTML(column.image) + '</td>\n';
+    } else {
+      indentSpace(3) + '<td></td>\n';
+    }
+  }
+  htmlContent += indentSpace(2) + '</tr>\n';
+
+  let lastSectionHeaderKey = null;  // last key for section header
+  let previousHeaderFlag = false;   // header was activated in previous step
+
+  // Loop on all the build order steps
+  for (const currentStep of buildOrderData) {
+    const notes = currentStep['notes'];
+
+    // Section header
+    if (sectionsHeader) {
+      // Key to check for section header
+      console.assert(
+          sectionsHeader.key in currentStep,
+          'Current step is missing \'' + sectionsHeader.key + '\'.');
+      const keyValue = currentStep[sectionsHeader.key];
+
+      // Activate if first line or seen in the previous line
+      if ((!lastSectionHeaderKey || previousHeaderFlag)) {
+        if (sectionsHeader.after && (keyValue in sectionsHeader.after)) {
+          htmlContent += indentSpace(2) + '<tr class="border_top">\n';
+          htmlContent += indentSpace(3) + '<td class="full_line" colspan=8>' +
+              sectionsHeader.after[keyValue] + '</td>\n';
+          htmlContent += indentSpace(2) + '</tr>\n';
+        }
+        previousHeaderFlag = false;
+      }
+      // Activate if new key
+      else if ((keyValue !== lastSectionHeaderKey)) {
+        if (sectionsHeader.before && (keyValue in sectionsHeader.before)) {
+          htmlContent += indentSpace(2) + '<tr class="border_top">\n';
+          htmlContent += indentSpace(3) + '<td class="full_line" colspan=8>' +
+              sectionsHeader.before[keyValue] + '</td>\n';
+          htmlContent += indentSpace(2) + '</tr>\n';
+        }
+        previousHeaderFlag = true;
+      } else {
+        previousHeaderFlag = false;
+      }
+
+      // Save last key value seen
+      lastSectionHeaderKey = keyValue;
+    }
+
+    // Loop on the notes
+    for (const [noteID, note] of enumerate(notes)) {
+      // Add column content for the first line of the notes.
+      if (noteID == 0) {
+        htmlContent += indentSpace(2) + '<tr class="border_top">\n';
+
+        // Loop on the columns to show
+        for (const [index, column] of updatedColumnsDescription.entries()) {
+          // Get the value of the current field
+          const field = column.field;
+          let subPart = currentStep;
+          for (const subField of field.split('/')) {
+            if (!(subField in subPart)) {  // field not found
+              subPart = '';
+              break;
+            }
+            subPart = subPart[subField];
+          }
+          let fieldValue = subPart;
+
+          // Only show numbers > 0
+          if (column.displayIfPositive && (fieldValue !== '')) {
+            const num = Number(fieldValue);
+            if (Number.isInteger(num)) {
+              if (num <= 0) {
+                fieldValue = '';
+              }
+            } else {
+              console.log(
+                  'Warning: Exepcted integer for \'' + field +
+                  '\', but received \'' + fieldValue + '\'.');
+            }
+          }
+
+          // Display field value
+          htmlContent += indentSpace(3) + '<td class="column-' +
+              index.toString() + '">' + fieldValue + '</td>\n';
+        }
+      }
+      // Only add notes for the next lines (i.e. no column content).
+      else {
+        htmlContent += indentSpace(2) + '<tr>\n';
+        for (let index = 0; index < updatedColumnsDescription.length; index++) {
+          htmlContent += indentSpace(3) + '<td class="column-' +
+              index.toString() + '"></td>\n';
+        }
+      }
+
+      // Add the current note line
+      htmlContent += indentSpace(3) + '<td class="note">\n' + indentSpace(4) +
+          '<div>' + noteToTextImages(note) + '</div>\n' + indentSpace(3) +
+          '</td>\n';
+      htmlContent += indentSpace(2) + '</tr>\n';
+    }
+  }
+
+  htmlContent += indentSpace(1) + '</table>\n';
+
+  // Copy HTML for export
+  const htmlContentCopy =
+      JSON.parse(JSON.stringify(htmlContent)) + '</body>\n\n</html>';
+
+  // Name for file export
+  const exportName = (Object.keys(dataBO).includes('name')) ?
+      dataBO.name.replaceAll(/\s+/g, '_') :
+      'rts_overlay';
+
+  // Buttons to export HTML and build order
+  htmlContent += '\n<button id="export_html">Export HTML</button>\n';
+  htmlContent += '\n<button id="export_bo">Export build order</button>\n';
+
+  htmlContent += indentSpace(1) + '<script>\n';
+
+  htmlContent += indentSpace(2) +
+      'const dataHTML = ' + JSON.stringify(htmlContentCopy) + ';\n\n';
+  htmlContent +=
+      indentSpace(2) + 'const dataBO = ' + JSON.stringify(dataBO) + ';\n\n';
+
+  // Export HTML
+  htmlContent += indentSpace(2) +
+      'document.getElementById(\'export_html\').addEventListener(\'click\', function() {\n';
+  htmlContent += indentSpace(3) +
+      'const fileHTML = new Blob([dataHTML], {type: \'text/plain\'});\n';
+  htmlContent +=
+      indentSpace(3) + 'const link = document.createElement(\'a\');\n';
+  htmlContent +=
+      indentSpace(3) + 'link.href = URL.createObjectURL(fileHTML);\n';
+  htmlContent +=
+      indentSpace(3) + 'link.download = \'' + exportName + '.html\';\n';
+  htmlContent += indentSpace(3) + 'link.click();\n';
+  htmlContent += indentSpace(3) + 'URL.revokeObjectURL(link.href);\n';
+  htmlContent += indentSpace(2) + '});\n\n';
+
+  // Export BO
+  htmlContent += indentSpace(2) +
+      'document.getElementById(\'export_bo\').addEventListener(\'click\', function() {\n';
+  htmlContent += indentSpace(3) +
+      'const fileBO = new Blob([JSON.stringify(dataBO, null, 4)], {type: \'text/plain\'});\n';
+  htmlContent +=
+      indentSpace(3) + 'const link = document.createElement(\'a\');\n';
+  htmlContent += indentSpace(3) + 'link.href = URL.createObjectURL(fileBO);\n';
+  htmlContent +=
+      indentSpace(3) + 'link.download = \'' + exportName + '.json\';\n';
+  htmlContent += indentSpace(3) + 'link.click();\n';
+  htmlContent += indentSpace(3) + 'URL.revokeObjectURL(link.href);\n';
+  htmlContent += indentSpace(2) + '});\n\n';
+
+  htmlContent += indentSpace(1) + '</script>\n';
+
+  htmlContent += '</body>\n\n</html>';
+
+  // Update overlay HTML content
+  fullPageWindow.document.write(htmlContent);
+}
+
+/**
  * Display (and create) the overlay window.
  */
 function displayOverlay() {
@@ -2971,6 +3425,7 @@ function displayOverlay() {
   htmlContent += '\n' + isBOImageValid.toString();
   htmlContent += '\n' + getBOImageValue.toString();
   htmlContent += '\n' + checkValidBO.toString();
+  htmlContent += '\n' + noteToTextImages.toString();
   htmlContent += '\n' + getBOPanelContent.toString();
   htmlContent += '\n' + updateBOPanel.toString();
   htmlContent += '\n' + getResourceLine.toString();
@@ -3102,7 +3557,7 @@ function contentArrayToDiv(content) {
 function getArrayInstructions(
     evaluateTimeFlag, selectFactionLines = null, externalBOLines = null) {
   let result = [
-    'Replace the text in the panel below by any build order in correct JSON format, then click on \'Display overlay\'',
+    'Replace the text in the panel below by any build order in correct JSON format, then click on \'Open full page\' or \'Display overlay\'',
     '(appearing on the left side of the screen when the build order is valid). You will need an Always On Top application',
     'to keep the overlay visible while playing. Hover briefly on the \'Display overlay\' button to get more information.',
     '',
@@ -3122,6 +3577,7 @@ function getArrayInstructions(
     '&nbsp &nbsp - \'Reset build order\' : Reset the build order to a minimal template (adapt the initial fields).',
     '&nbsp &nbsp - \'Add step\' : Add a step to the build order.',
     '&nbsp &nbsp - \'Format\' : Format the build order to a proper JSON indentation.',
+    '&nbsp &nbsp - \'Open full page\' : Open the full build order in a new page (when ready).',
     '&nbsp &nbsp - \'Display overlay\' : Display the build order as separate overlay (when ready).'
   ];
   result = result.concat(buttonsLines);
@@ -3343,6 +3799,28 @@ function isBOTimingEvaluationAvailable() {
 
     default:
       return false;
+  }
+}
+
+/**
+ * Open a new page displaying the full BO in a single panel.
+ */
+function openSinglePanelPage() {
+  switch (gameName) {
+    case 'aoe2':
+      openSinglePanelPageAoE2();
+      break;
+    case 'aoe4':
+      openSinglePanelPageAoE4();
+      break;
+    case 'aom':
+      openSinglePanelPageAoM();
+      break;
+    case 'sc2':
+      openSinglePanelPageSC2();
+      break;
+    default:
+      throw 'Unknown game: ' + gameName;
   }
 }
 
@@ -3915,6 +4393,65 @@ function getInstructionsAoE2() {
       getArrayInstructions(true, selectFactionLines, externalBOLines));
 }
 
+/**
+ * Open a new page displaying the full BO in a single panel, for AoE2.
+ */
+function openSinglePanelPageAoE2() {
+  // Image folders
+  const common = 'assets/common/';
+  const game = 'assets/' + gameName + '/';
+  const resource = game + '/resource/';
+
+  // Description for each column
+  let columnsDescription = [
+    new SinglePanelColumn('time', common + 'icon/time.png'),
+    new SinglePanelColumn('villager_count', resource + 'MaleVillDE_alpha.png'),
+    new SinglePanelColumn('resources/builder', resource + 'Aoe2de_hammer.png'),
+    new SinglePanelColumn('resources/wood', resource + 'Aoe2de_wood.png'),
+    new SinglePanelColumn('resources/food', resource + 'Aoe2de_food.png'),
+    new SinglePanelColumn('resources/gold', resource + 'Aoe2de_gold.png'),
+    new SinglePanelColumn('resources/stone', resource + 'Aoe2de_stone.png')
+  ];
+
+  columnsDescription[0].italic = true;                      // time
+  columnsDescription[0].hideIfAbsent = true;                // time
+  columnsDescription[0].textAlign = 'right';                // time
+  columnsDescription[1].bold = true;                        // villager count
+  columnsDescription[2].hideIfAbsent = true;                // builder
+  columnsDescription[3].backgroundColor = [94, 72, 56];     // wood
+  columnsDescription[4].backgroundColor = [153, 94, 89];    // food
+  columnsDescription[5].backgroundColor = [135, 121, 78];   // gold
+  columnsDescription[6].backgroundColor = [100, 100, 100];  // stone
+
+  // all columns, except time
+  for (let i = 1; i <= 6; i++) {
+    columnsDescription[i].displayIfPositive = true;
+  }
+
+  // Sections Header
+  const topArrow = getBOImageHTML(common + 'icon/top_arrow.png');
+  const sectionsHeader = {
+    'key': 'age',  // Key to look for
+    // Header before the current row
+    'before': {
+      2: topArrow + 'Aging up to Feudal Age',
+      3: topArrow + 'Aging up to Castle Age',
+      4: topArrow + 'Aging up to Imperial Age'
+    },
+    // Header after the current row
+    'after': {
+      1: getBOImageHTML(game + 'age/DarkAgeIconDE_alpha.png') + 'Dark Age',
+      2: getBOImageHTML(game + 'age/FeudalAgeIconDE_alpha.png') + 'Feudal Age',
+      3: getBOImageHTML(game + 'age/CastleAgeIconDE_alpha.png') + 'Castle Age',
+      4: getBOImageHTML(game + 'age/ImperialAgeIconDE_alpha.png') +
+          'Imperial Age'
+    }
+  };
+
+  // Feed game description to generic function
+  openSinglePanelPageFromDescription(columnsDescription, sectionsHeader);
+}
+
 
 // -- Age of Empires IV (AoE4) -- //
 
@@ -4456,6 +4993,63 @@ function getInstructionsAoE4() {
       getArrayInstructions(true, selectFactionLines, externalBOLines));
 }
 
+/**
+ * Open a new page displaying the full BO in a single panel, for AoE4.
+ */
+function openSinglePanelPageAoE4() {
+  // Image folders
+  const common = 'assets/common/';
+  const game = 'assets/' + gameName + '/';
+  const resource = game + '/resource/';
+
+  // Description for each column
+  let columnsDescription = [
+    new SinglePanelColumn('time', common + 'icon/time.png'),
+    new SinglePanelColumn(
+        'population_count', game + 'building_economy/house.png'),
+    new SinglePanelColumn('villager_count', game + 'unit_worker/villager.png'),
+    new SinglePanelColumn('resources/builder', resource + 'repair.png'),
+    new SinglePanelColumn('resources/food', resource + 'resource_food.png'),
+    new SinglePanelColumn('resources/wood', resource + 'resource_wood.png'),
+    new SinglePanelColumn('resources/gold', resource + 'resource_gold.png'),
+    new SinglePanelColumn('resources/stone', resource + 'resource_stone.png')
+  ];
+
+  columnsDescription[0].italic = true;                      // time
+  columnsDescription[0].hideIfAbsent = true;                // time
+  columnsDescription[0].textAlign = 'right';                // time
+  columnsDescription[1].hideIfAbsent = true;                // population count
+  columnsDescription[2].bold = true;                        // villager count
+  columnsDescription[3].hideIfAbsent = true;                // builder
+  columnsDescription[4].backgroundColor = [153, 94, 89];    // food
+  columnsDescription[5].backgroundColor = [94, 72, 56];     // wood
+  columnsDescription[6].backgroundColor = [135, 121, 78];   // gold
+  columnsDescription[7].backgroundColor = [100, 100, 100];  // stone
+
+  // all columns, except time
+  for (let i = 1; i <= 7; i++) {
+    columnsDescription[i].displayIfPositive = true;
+  }
+
+  // Sections Header
+  const topArrow = getBOImageHTML(common + 'icon/top_arrow.png');
+  const sectionsHeader = {
+    'key': 'age',  // Key to look for
+    // Header before the current row
+    'before': null,
+    // Header after the current row
+    'after': {
+      1: getBOImageHTML(game + 'age/age_1.png') + 'Dark Age',
+      2: getBOImageHTML(game + 'age/age_2.png') + 'Feudal Age',
+      3: getBOImageHTML(game + 'age/age_3.png') + 'Castle Age',
+      4: getBOImageHTML(game + 'age/age_4.png') + 'Imperial Age'
+    }
+  };
+
+  // Feed game description to generic function
+  openSinglePanelPageFromDescription(columnsDescription, sectionsHeader);
+}
+
 
 // -- Age of Mythology (AoM) -- //
 
@@ -4491,8 +5085,7 @@ function getResourceLineAoM(currentStep) {
   htmlString += getBOImageValue(
       resourceFolder + 'repair.png', resources, 'builder', true);
   htmlString += getBOImageValue(
-      gamePicturesFolder + 'greeks_civilian/villager_greek.png', currentStep,
-      'worker_count', true);
+      resourceFolder + 'worker.png', currentStep, 'worker_count', true);
 
   // Age image
   const ageImage = {
@@ -4869,7 +5462,7 @@ function getImagesAoM() {
             'arctic_winds.png#avenging_spirit.png#berserkergang.png#bravery.png#call_of_valhalla.png#cave_troll.png#conscript_great_hall_soldiers.png#conscript_hill_fort_soldiers.png#conscript_longhouse_soldiers.png#disablot.png#dragonscale_shields.png#dwarven_auger.png#dwarven_breastplate.png#dwarven_weapons.png#eyes_in_the_forest.png#feasts_of_renown.png#freyr\'s_gift.png#fury_of_the_fallen.png#gjallarhorn.png#granite_blood.png#granite_maw.png#grasp_of_ran.png#hall_of_thanes.png#hamask.png#hammer_of_thunder.png#huntress_axe.png#levy_great_hall_soldiers.png#levy_hill_fort_soldiers.png#levy_longhouse_soldiers.png#long_serpent.png#meteoric_iron_armor.png#nine_waves.png#rampage.png#rime.png#ring_giver.png#ring_oath.png#safeguard.png#servants_of_glory.png#sessrumnir.png#silent_resolve.png#sons_of_sleipnir.png#swine_array.png#thundering_hooves.png#thurisaz_rune.png#twilight_of_the_gods.png#valgaldr.png#winter_harvest.png#wrath_of_the_deep.png#ydalir.png',
         'other': 'farm.png#house.png#relic.png#titan_gate.png#wonder.png',
         'resource':
-            'berry.png#favor.png#food.png#gold.png#repair.png#tree.png#wood.png',
+            'berry.png#favor.png#food.png#gold.png#repair.png#tree.png#wood.png#worker.png',
         'tech_military':
             'champion_archers.png#champion_cavalry.png#champion_infantry.png#draft_horses.png#engineers.png#heavy_archers.png#heavy_cavalry.png#heavy_infantry.png#medium_archers.png#medium_cavalry.png#medium_infantry.png#norse_champion_infantry.png#norse_heavy_infantry.png#norse_medium_infantry.png',
         'temple': 'omniscience.png#temple.png',
@@ -4932,6 +5525,66 @@ function getInstructionsAoM() {
     'The \'select faction\' category provides all the available major god names for the \'major_god\' field.'
   ];
   return contentArrayToDiv(getArrayInstructions(true, selectFactionLines));
+}
+
+/**
+ * Open a new page displaying the full BO in a single panel, for AoM.
+ */
+function openSinglePanelPageAoM() {
+  // Image folders
+  const common = 'assets/common/';
+  const game = 'assets/' + gameName + '/';
+  const resource = game + '/resource/';
+
+  // Description for each column
+  let columnsDescription = [
+    new SinglePanelColumn('time', common + 'icon/time.png'),
+    new SinglePanelColumn('worker_count', resource + 'worker.png'),
+    new SinglePanelColumn('resources/builder', resource + 'repair.png'),
+    new SinglePanelColumn('resources/food', resource + 'food.png'),
+    new SinglePanelColumn('resources/wood', resource + 'wood.png'),
+    new SinglePanelColumn('resources/gold', resource + 'gold.png'),
+    new SinglePanelColumn('resources/favor', resource + 'favor.png')
+  ];
+
+  columnsDescription[0].italic = true;                      // time
+  columnsDescription[0].hideIfAbsent = true;                // time
+  columnsDescription[0].textAlign = 'right';                // time
+  columnsDescription[1].bold = true;                        // worker count
+  columnsDescription[2].hideIfAbsent = true;                // builder
+  columnsDescription[3].backgroundColor = [153, 94, 89];    // food
+  columnsDescription[4].backgroundColor = [94, 72, 56];     // wood
+  columnsDescription[5].backgroundColor = [135, 121, 78];   // gold
+  columnsDescription[6].backgroundColor = [100, 100, 100];  // favor
+
+  // all columns, except time
+  for (let i = 1; i <= 6; i++) {
+    columnsDescription[i].displayIfPositive = true;
+  }
+
+  // Sections Header
+  const topArrow = getBOImageHTML(common + 'icon/top_arrow.png');
+  const sectionsHeader = {
+    'key': 'age',  // Key to look for
+    // Header before the current row
+    'before': {
+      2: topArrow + 'Aging up to Classical Age',
+      3: topArrow + 'Aging up to Heroic Age',
+      4: topArrow + 'Aging up to Mythic Age',
+      5: topArrow + 'Aging up to Wonder Age'
+    },
+    // Header after the current row
+    'after': {
+      1: getBOImageHTML(game + 'age/archaic_age.png') + 'Archaic Age',
+      2: getBOImageHTML(game + 'age/classical_age.png') + 'Classical Age',
+      3: getBOImageHTML(game + 'age/heroic_age.png') + 'Heroic Age',
+      4: getBOImageHTML(game + 'age/mythic_age.png') + 'Mythic Age',
+      5: getBOImageHTML(game + 'age/wonder_age.png') + 'Wonder Age'
+    }
+  };
+
+  // Feed game description to generic function
+  openSinglePanelPageFromDescription(columnsDescription, sectionsHeader);
 }
 
 
@@ -5128,4 +5781,41 @@ function getInstructionsSC2() {
     'The \'select faction\' category provides all the available race names for the \'race\' and \'opponent_race\' fields.'
   ];
   return contentArrayToDiv(getArrayInstructions(false, selectFactionLines));
+}
+
+/**
+ * Open a new page displaying the full BO in a single panel, for SC2.
+ */
+function openSinglePanelPageSC2() {
+  // Image folders
+  const common = 'assets/common/';
+  const game = 'assets/' + gameName + '/';
+  const resource = game + '/resource/';
+
+  // Description for each column
+  let columnsDescription = [
+    new SinglePanelColumn('time', common + 'icon/time.png'),
+    new SinglePanelColumn('supply', common + 'icon/house.png'),
+    new SinglePanelColumn('minerals', resource + 'minerals.png'),
+    new SinglePanelColumn('vespene_gas', resource + 'vespene_gas.png')
+  ];
+
+  columnsDescription[0].italic = true;                     // time
+  columnsDescription[0].textAlign = 'right';               // time
+  columnsDescription[1].bold = true;                       // supply
+  columnsDescription[2].backgroundColor = [77, 103, 136];  // minerals
+  columnsDescription[3].backgroundColor = [67, 96, 57];    // vespene gas
+
+  // all columns
+  for (let i = 0; i <= 3; i++) {
+    columnsDescription[i].hideIfAbsent = true;
+  }
+
+  // all columns, except time
+  for (let i = 1; i <= 3; i++) {
+    columnsDescription[i].displayIfPositive = true;
+  }
+
+  // Feed game description to generic function
+  openSinglePanelPageFromDescription(columnsDescription);
 }
