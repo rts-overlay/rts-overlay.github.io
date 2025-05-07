@@ -9,6 +9,7 @@
     <meta charset="utf-8">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="layout.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body onload="initConfigWindow()">
@@ -25,7 +26,7 @@
             <!-- Game selection, demos & download -->
             <div class="config_row" id="game_selection">
                 <!-- Select game -->
-                <select name="select_game" id="select_game">
+                <select id="select_game">
                     <option selected="selected" value="aoe2">Age of Empires II</option>
                     <option value="aoe4">Age of Empires IV</option>
                     <option value="aom">Age of Mythology</option>
@@ -43,14 +44,12 @@
                 <form action="https://github.com/CraftySalamander/RTS_Overlay/archive/refs/heads/master.zip"
                     target="_blank" class="tooltip"><input class="button" type="submit" value="Download local copy" />
                     <span class="tooltiptext_right">
-                        <div>Highly recommended!</div>
-                        <div></div>
                         <div>Download a local copy of RTS Overlay to improve the speed,</div>
                         <div>work offline and customize your experience.</div>
                         <div class="div_space">----- Solution 1 -----</div>
                         <div>1. Click on this button to download the zip.</div>
                         <div>2. Unzip it.</div>
-                        <div>3. Open <em>docs/index.html</em> with any web browser (e.g. Chrome).</div>
+                        <div>3. Open <em>docs/index.html</em> with any web browser (Chrome, Edge...).</div>
                         <div>4. (Optional) Customize the variables at the top of the files</div>
                         <div><em>docs/layout.css</em> and <em>docs/rts_overlay.js</em>.</div>
                         <div class="div_space">----- Solution 2 -----</div>
@@ -65,7 +64,7 @@
 
             <!-- Build order main configuration selection -->
             <div class="text_full_line_row"><span>Select build order</span></div>
-            <div id="main_configuration" class="config_row"></div>
+            <div id="main_configuration" class="config_row radio_selector"></div>
 
 
             <!-- FROM LIBRARY -->
@@ -77,15 +76,17 @@
             <div id="bo_faction_selection" class="config_row">
                 <input type="text" id="bo_faction_text" name="bo_faction_text" placeholder="keywords or space">
                 <!-- Player faction -->
-                <select id="bo_faction_select_widget" name="bo_faction_select_widget"></select>
-                <div id="bo_faction_select_tooltip" class="tooltip">
-                    <div id="bo_faction_image"></div>
+                <select id="library_faction_select_widget"
+                    onchange="updateImageFromSelect(this, 'library_faction_image', 25)"></select>
+                <div id="library_faction_select_tooltip" class="tooltip">
+                    <div id="library_faction_image"></div>
                     <span class=" tooltiptext_right">
                         <div>Select the player faction to filter the build orders.</div>
                     </span>
                 </div>
                 <!-- Opponent faction -->
-                <select id="bo_opponent_faction_select_widget" name="bo_opponent_faction_select_widget"></select>
+                <select id="bo_opponent_faction_select_widget"
+                    onchange="updateImageFromSelect(this, 'bo_opponent_faction_image', 25)"></select>
                 <div id="bo_opponent_faction_select_tooltip" class="tooltip">
                     <div id="bo_opponent_faction_image"></div>
                     <span class=" tooltiptext_right">
@@ -252,16 +253,18 @@
             <!-- Sliders to adjust the overlay elements size -->
             <div id="bo_panel_sliders" class="config_row">
                 <!-- Build order panel sliders -->
-                <input id="bo_fontsize" class="bo_panel_slider" type="range" min="0.1" max="3.0" value="1.0" step="0.1">
+                <input id="bo_fontsize" class="bo_panel_number_select" type="number" min="0.1" max="3.0" value="1.0"
+                    step="0.1">
                 <div class="tooltip">
-                    <div id="bo_fontsize_value" class="configuration_text"></div>
+                    <div id="bo_fontsize_value" class="configuration_text">font size</div>
                     <span class="tooltiptext_right">
                         <div>Font size for the build order panel text.</div>
                     </span>
                 </div>
-                <input id="bo_images_size" class="bo_panel_slider" type="range" min="5" max="60" value="25" step="1">
+                <input id="bo_images_size" class="bo_panel_number_select" type="number" min="5" max="60" value="25"
+                    step="1">
                 <div class="tooltip">
-                    <div id="bo_images_size_value" class="configuration_text"></div>
+                    <div id="bo_images_size_value" class="configuration_text">images size</div>
                     <span class="tooltiptext_right">
                         <div>Sizes of the images in the build order panel.</div>
                     </span>
@@ -285,25 +288,31 @@
 
             <!-- Provide info and check if the BO is valid (also for timing) -->
             <div id="info_bo_validity">
-                <p id="bo_validity_message"></p>
+                <div id="bo_design_indication" class="config_row radio_selector"></div>
                 <div id="rts_overlay_info" class="tooltip"></div>
             </div>
 
             <!-- Text editor for the BO design -->
-            <textarea id="bo_design" name="bo_design" rows="20" cols="100"
+            <textarea id="bo_design_raw" name="bo_design_raw" rows="20" cols="100"
                 ondrop="BODesignDropHandler(event)"></textarea>
 
+            <!-- Visual editor for the BO design -->
+            <div id="bo_design_visual"></div>
 
             <!-- SELECT IMAGE TO ADD IN BO -->
 
             <!-- Choose the category of image to add -->
             <div id="image_category_line" class="config_row">
-                Image selection
-                <select id="image_class_selection" name="image_class_selection"></select>
+                <b>Image selection</b>
+                <select id="image_class_selection"></select>
             </div>
 
             <!-- Copy image field -->
             <input type="text" id="image_copy" name="image_copy" placeholder="selected image name" readonly>
+            <div id="drag_and_drop_note">Drag and Drop images from below to the visual editor notes above.
+                <br>Alternatively, write <strong>@</strong> (above), followed by the image name to search.
+                <br>Then, use the arrow keys and Enter to select the image.
+            </div>
 
             <!-- Images selection display -->
             <div id="images_bo_display"></div>

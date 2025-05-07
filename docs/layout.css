@@ -8,8 +8,8 @@
     --bo_panel_text_color: rgb(255, 255, 255);
     --bo_panel_background_color: rgb(70, 70, 70);
     --bo_panel_emphasis_color: rgb(0, 62, 124);
-    --slider_color: rgb(0, 32, 96);
-    --slider_width: 100px;
+    --number_select_width: 40px;
+    --number_select_radius: 5px;
     --slider_horizontal_space: 15px;
     --bo_panel_padding: 10px;
     --bo_panel_lines_half_vertical_spacing: 5px;
@@ -55,7 +55,7 @@
     --toggle_left_color: rgb(7, 34, 97);
     --toggle_right_color: rgb(185, 0, 0);
     --toggle_slider_color: rgb(255, 255, 255);
-    /* Build order text area */
+    /* Build order design */
     --bo_text_area_width: 100%;
     --bo_text_area_height: 55%;
     --bo_text_area_color: rgb(0, 0, 0);
@@ -64,7 +64,19 @@
     --bo_text_area_text_inner_padding: 15px;
     --bo_text_area_border_size: 2px;
     --bo_text_area_border_color: rgb(0, 0, 0);
-    --bo_text_area_border_radius: 10px;
+    --bo_design_border_radius: 10px;
+    --bo_visual_desing_max_width: 50vw;
+    --bo_visual_desing_max_height: 60vh;
+    --bo_design_buttons_space: 5px;
+    --bo_design_select_space: 10px;
+    --bo_design_non_editable_color: rgb(180, 180, 180);
+    --bo_design_vertical_space: 5px;
+    --bo_visual_design_padding: 15px;
+    --bo_visual_design_line_start: 2.5%;
+    --bo_visual_design_line_size: 95%;
+    --bo_visual_design_line_color: rgb(150, 150, 150);
+    /* Grid image selector with '@' suggestions */
+    --grid_selector_background_color: rgb(0, 0, 0);
     /* Buttons */
     --button_color: rgb(255, 255, 255);
     --no_selected_button_color: rgb(210, 210, 210);
@@ -184,16 +196,16 @@ a {
 }
 
 /* Radio buttons to select the main configuration */
-#main_configuration input[type="radio"] {
+.radio_selector input[type="radio"] {
     display: none;
 }
 
-#main_configuration label {
+.radio_selector label {
     background-color: var(--no_selected_button_color);
     font-size: var(--radio_button_text);
 }
 
-#main_configuration input[type="radio"]:checked+label {
+.radio_selector input[type="radio"]:checked+label {
     background-color: var(--button_color);
 }
 
@@ -264,10 +276,10 @@ a {
     transition-delay: var(--tooltip_rts_info_delay);
 }
 
-/* Sliders for the build order panel */
-.bo_panel_slider {
-    accent-color: var(--slider_color);
-    width: var(--slider_width);
+/* Selection for the build order panel */
+.bo_panel_number_select {
+    width: var(--number_select_width);
+    border-radius: var(--number_select_radius);
 }
 
 #bo_fontsize_value {
@@ -340,8 +352,8 @@ input:checked+.slider:before {
     border-radius: 50%;
 }
 
-/* BO text area */
-#bo_design {
+/* BO text area (raw JSON) */
+#bo_design_raw {
     width: var(--bo_text_area_width);
     height: var(--bo_text_area_height);
 
@@ -355,10 +367,94 @@ input:checked+.slider:before {
 
     /* Border */
     border: var(--bo_text_area_border_size), var(--bo_text_area_border_color) solid;
-    border-radius: var(--bo_text_area_border_radius);
+    border-radius: var(--bo_design_border_radius);
 }
 
-/* Line with RTS Overlay info and BO validity */
+/* Bo visual design */
+#bo_design_visual {
+    max-width: var(--bo_visual_desing_max_width);
+    max-height: var(--bo_visual_desing_max_height);
+    overflow: auto;
+}
+
+.bo_design_visual_table {
+    color: var(--bo_panel_text_color);
+    background-color: var(--bo_panel_background_color);
+    border-radius: var(--bo_design_border_radius);
+    border-collapse: collapse;
+}
+
+.bo_design_visual_table td {
+    vertical-align: middle;
+    padding: var(--bo_visual_design_padding);
+}
+
+.bo_design_visual_table img {
+    vertical-align: middle;
+}
+
+.bo_design_visual_table .circle_button {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+}
+
+.bo_design_visual_table .circle_button:hover {
+    border-radius: 50%;
+}
+
+.bo_visu_design_buttons_left,
+.bo_visu_design_buttons_right {
+    display: flex;
+    flex-direction: row;
+    gap: var(--bo_design_buttons_space);
+}
+
+.bo_visu_design_buttons_left {
+    justify-content: flex-start;
+}
+
+.bo_visu_design_buttons_right {
+    justify-content: flex-end;
+}
+
+.bo_design_select_with_image {
+    display: flex;
+    flex-direction: row;
+    gap: var(--bo_design_select_space);
+}
+
+.non_editable_field {
+    color: var(--bo_design_non_editable_color);
+    font-style: italic;
+}
+
+#bo_design_visual_header {
+    margin-bottom: var(--bo_design_vertical_space);
+}
+
+#bo_design_visual_header td {
+    text-align: left;
+}
+
+#bo_design_visual_content td {
+    text-align: center;
+}
+
+#bo_design_visual_content .border_top {
+    position: relative;
+}
+
+#bo_design_visual_content .border_top::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: var(--bo_visual_design_line_start);
+    width: var(--bo_visual_design_line_size);
+    border: 1px solid var(--bo_visual_design_line_color);
+}
+
+/* Line with RTS Overlay info and BO design indication */
 #info_bo_validity {
     display: flex;
     flex-direction: row;
@@ -367,8 +463,11 @@ input:checked+.slider:before {
     width: 100%;
 }
 
-#bo_validity_message {
-    font-weight: bold;
+/* Grid image selector with '@' suggestions */
+#image_selector_grid {
+    width: fit-content;
+    display: grid;
+    background-color: var(--grid_selector_background_color);
 }
 
 /* Footer */
@@ -477,6 +576,12 @@ footer {
 /* Image selection result (for copy) */
 #image_copy {
     min-width: var(--images_copy_min_width);
+}
+
+/* Instructions for drag & drop */
+#drag_and_drop_note {
+    font-size: 90%;
+    font-style: italic;
 }
 
 /* Images category selection line */

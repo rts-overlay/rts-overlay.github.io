@@ -1,3 +1,7 @@
+# 2025.05.07
+* Improved web editor.
+* AoE2 updates for Three Kingdoms DLC.
+
 # 2025.04.13
 * Update AoE4 images + AoE2 images for update 141935.
 
