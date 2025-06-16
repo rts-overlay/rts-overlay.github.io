@@ -58,6 +58,13 @@ const EXTERNAL_BO_WEBSITES = {
       'Click on the 3 dots (upper right corner), then on the \'Overlay Tool\' copy button.'
     ],
     ['age4builder.com', 'https://age4builder.com/', 'Click on the salamander icon.']
+  ],
+  'aom': [
+    ['thedodclan.com', 'https://thedodclan.com/build-orders', 'Click on the script icon.'],
+    [
+      'Export for DoD Clan', 'function:generateCSVForDodClan()',
+      'Generate a CSV file to add your BO on the Deities of Death BO website<br>(visit <a>https://thedodclan.com/build-orders</a> for more info).'
+    ]
   ]
 };
 
@@ -1249,18 +1256,32 @@ function updateExternalBOWebsites() {
     for (const entry of EXTERNAL_BO_WEBSITES[gameName]) {
       console.assert(
           entry.length === 3, 'All entries in \'EXTERNAL_BO_WEBSITES\' must have a size of 3.');
-      linksContent += '<form action="' + entry[1] + '" target="_blank" class="tooltip">';
-      linksContent += '<input class="button" type="submit" value="' + entry[0] + '" />';
-      linksContent += '<span class="tooltiptext_right">';
-      linksContent +=
-          '<div>External build order website providing build orders with RTS Overlay format.</div>';
-      linksContent += '-----';
-      linksContent += '<div>To import the requested build order:</div>';
-      linksContent += '<div>1. Select the requested build order on ' + entry[0] + '.</div>';
-      linksContent += '<div>2. ' + entry[2] + '</div>';
-      linksContent += '<div>3. Paste the clipboard content on the right panel.</div>';
-      linksContent += '</span>';
-      linksContent += '</form>';
+
+      // Clicking on the button calls a function
+      if (entry[1].startsWith('function:')) {
+        let functionName = entry[1].substring(9);  // Remove the "function:" prefix.
+
+        linksContent +=
+            '<button type="button" class="button tooltip" onclick="' + functionName + '">';
+        linksContent += entry[0];
+        linksContent += '<span class="tooltiptext_right">';
+        linksContent += '<div>' + entry[2] + '</div>';
+        linksContent += '</span>';
+        linksContent += '</button>';
+      } else {  // Clicking on the button opens a tab with the specified website
+        linksContent += '<form action="' + entry[1] + '" target="_blank" class="tooltip">';
+        linksContent += '<input class="button" type="submit" value="' + entry[0] + '" />';
+        linksContent += '<span class="tooltiptext_right">';
+        linksContent +=
+            '<div>External build order website providing build orders with RTS Overlay format.</div>';
+        linksContent += '-----';
+        linksContent += '<div>To import the requested build order:</div>';
+        linksContent += '<div>1. Select the requested build order on ' + entry[0] + '.</div>';
+        linksContent += '<div>2. ' + entry[2] + '</div>';
+        linksContent += '<div>3. Paste the clipboard content on the right panel.</div>';
+        linksContent += '</span>';
+        linksContent += '</form>';
+      }
     }
   }
   document.getElementById('external_bo_webistes').innerHTML = linksContent;
@@ -4769,6 +4790,17 @@ function displayOverlay() {
   htmlContent += '\n<head><link rel="stylesheet" href="layout.css">' + headContent + '</head>';
   htmlContent += '\n<body id=\"body_overlay\">' + bodyContent + '</body></html>';
 
+  if (localStorage.getItem('hideAlwaysOnTopNote') !== 'true') {
+    const userChoice = confirm(
+        'To keep the overlay on top of your game while playing, use an Always On Top application.\n' +
+        'For Windows, PowerToys is a good solution.\n' +
+        'It is free, developed by Microsoft and available on the Microsoft Store.' +
+        '\n\nHide this message next time?');
+    if (userChoice) {
+      localStorage.setItem('hideAlwaysOnTopNote', 'true');
+    }
+  }
+
   // Update overlay HTML content
   overlayWindow.document.write(htmlContent);
 }
@@ -4894,7 +4926,9 @@ function getArrayInstructions(externalBOLines = null) {
     'To re-load a build order, drag and drop a file with the build order on the bottom text panel (or replace the text manually).',
     '',
     'You can download a local copy of RTS Overlay to improve its speed, work offline and customize your experience.',
-    'Hover briefly on \'Download local copy\' for more information.'
+    'Hover briefly on \'Local version\' for more information.', '',
+    'Finally, you can also download RTS Overlay as an EXE app, to get an improved experience.',
+    'Hover briefly on \'Download exe app\' for more information.'
   ];
   return result.concat(validityFontSizeSavePart);
 }
@@ -5537,7 +5571,7 @@ function evaluateBOTimingAoE2(timeOffset) {
  */
 function getImagesAoE2() {
   // This is obtained using the 'python/utilities/list_images.py' script.
-  const imagesDict =
+  let imagesDict =
       {
         'age':
             'AgeUnknown.png#CastleAgeIconDE.png#CastleAgeIconDE_alpha.png#DarkAgeIconDE.png#DarkAgeIconDE_alpha.png#FeudalAgeIconDE.png#FeudalAgeIconDE_alpha.png#ImperialAgeIconDE.png#ImperialAgeIconDE_alpha.png',
@@ -6111,7 +6145,7 @@ function evaluateBOTimingAoE4(timeOffset) {
  */
 function getImagesAoE4() {
   // This is obtained using the 'python/utilities/list_images.py' script.
-  const imagesDict =
+  let imagesDict =
       {
         'abilities': 'attack-move.png#repair.png#ronin_hire_single.png',
         'ability_chinese': 'collect_tax.png#supervise.png',
@@ -6758,7 +6792,7 @@ function evaluateBOTimingAoM(timeOffset) {
  */
 function getImagesAoM() {
   // This is obtained using the 'python/utilities/list_images.py' script.
-  const imagesDict =
+  let imagesDict =
       {
         'age':
             'age_unknown.png#archaic_age.png#classical_age.png#heroic_age.png#mythic_age.png#wonder_age.png',
@@ -6776,7 +6810,7 @@ function getImagesAoM() {
         'atlanteans_minor_god':
             'atlas.png#hekate.png#helios.png#hyperion.png#leto.png#oceanus.png#prometheus.png#rheia.png#theia.png',
         'atlanteans_myth':
-            'argus.png#atlantean_titan.png#automaton.png#behemoth.png#caladria.png#centimanus.png#lampades.png#man_o_war.png#nereid.png#promethean.png#satyr.png#servant.png#stymphalian_bird.png',
+            'argus.png#atlantean_titan.png#automaton.png#behemoth.png#caladria.png#centimanus.png#dryad.png#lampades.png#man_o_war.png#nereid.png#promethean.png#satyr.png#servant.png#stymphalian_bird.png',
         'atlanteans_power':
             'carnivora_power.png#chaos.png#deconstruction.png#gaia_forest.png#hesperides.png#implode.png#shockwave.png#spider_lair.png#tartarian_gate_power.png#traitor.png#valor.png#vortex.png',
         'atlanteans_ship':
@@ -6864,7 +6898,7 @@ function getImagesAoM() {
             'dragon_ship.png#dreki.png#fishing_ship_norse.png#longboat.png#transport_ship_norse.png',
         'norse_siege': 'ballista.png#portable_ram.png',
         'norse_tech':
-            'arctic_winds.png#avenging_spirit.png#berserkergang.png#bravery.png#call_of_valhalla.png#cave_troll.png#conscript_great_hall_soldiers.png#conscript_hill_fort_soldiers.png#conscript_longhouse_soldiers.png#disablot.png#dragonscale_shields.png#dwarven_auger.png#dwarven_breastplate.png#dwarven_weapons.png#eyes_in_the_forest.png#feasts_of_renown.png#freyr\'s_gift.png#fury_of_the_fallen.png#gjallarhorn.png#granite_blood.png#granite_maw.png#grasp_of_ran.png#hall_of_thanes.png#hamask.png#hammer_of_thunder.png#huntress_axe.png#levy_great_hall_soldiers.png#levy_hill_fort_soldiers.png#levy_longhouse_soldiers.png#long_serpent.png#meteoric_iron_armor.png#nine_waves.png#rampage.png#rime.png#ring_giver.png#ring_oath.png#safeguard.png#servants_of_glory.png#sessrumnir.png#silent_resolve.png#sons_of_sleipnir.png#swine_array.png#thundering_hooves.png#thurisaz_rune.png#twilight_of_the_gods.png#valgaldr.png#winter_harvest.png#wrath_of_the_deep.png#ydalir.png',
+            'arctic_winds.png#avenging_spirit.png#berserkergang.png#bravery.png#call_of_valhalla.png#cave_troll.png#conscript_great_hall_soldiers.png#conscript_hill_fort_soldiers.png#conscript_longhouse_soldiers.png#disablot.png#dragonscale_shields.png#dwarven_auger.png#dwarven_breastplate.png#dwarven_weapons.png#eyes_in_the_forest.png#feasts_of_renown.png#freyr\'s_gift.png#fury_of_the_fallen.png#gjallarhorn.png#granite_blood.png#granite_maw.png#grasp_of_ran.png#hall_of_thanes.png#hamask.png#hammer_of_thunder.png#huntress_axe.png#levy_great_hall_soldiers.png#levy_hill_fort_soldiers.png#levy_longhouse_soldiers.png#long_serpent.png#meteoric_iron_armor.png#nine_waves.png#rampage.png#rigsthula.png#rime.png#ring_giver.png#ring_oath.png#safeguard.png#servants_of_glory.png#sessrumnir.png#silent_resolve.png#sons_of_sleipnir.png#swine_array.png#thundering_hooves.png#thurisaz_rune.png#twilight_of_the_gods.png#valgaldr.png#winter_harvest.png#wrath_of_the_deep.png#ydalir.png',
         'other': 'farm.png#house.png#relic.png#titan_gate.png#wonder.png',
         'resource': 'berry.png#favor.png#food.png#gold.png#repair.png#tree.png#wood.png#worker.png',
         'tech_military':
@@ -6880,6 +6914,230 @@ function getImagesAoM() {
   }
 
   return imagesDict;
+}
+
+/**
+ * Get the images conversion from RTS Overlay to DoD (Deities of Death) Clan icons (AoM).
+ *
+ * @returns Dictionary with conversion as 'RTS Overlay image: DoD Clan icon'.
+ */
+function getAoMConvertDodClan() {
+  const convertDict = {
+    'animal':
+        'baboon.png:baboon#chicken.png:chicken#cow.png:cow#gazelle.png:hunt#goat.png:goat#pig.png:pig',
+    'armory':
+        'armory.png:armory#copper_armor.png:copper armor#copper_shields.png:copper shields#copper_weapons.png:copper weapons',
+    'atlanteans_building':
+        'counter-barracks.png:counter barrack#economic_guild.png:economic guild#manor.png:manor#military_barracks.png:military barrack',
+    'atlanteans_civilian': 'citizen.png:citizen',
+    'atlanteans_hero': 'oracle_hero.png:oracle hero',
+    'atlanteans_human':
+        'arcus.png:arcus#contarius.png:contarius#katapeltes.png:katapeltes#murmillo.png:murmillo#turma.png:turma',
+    'atlanteans_myth':
+        'automaton.png:automaton#dryad.png:dryad#promethean.png:promethean#servant.png:servant',
+    'atlanteans_power':
+        'deconstruction.png:deconstruction#gaia_forest.png:gaia forest#valor.png:valor',
+    'chinese_building': 'imperial_academy.png:imperial academy',
+    'chinese_civilian': 'kuafu.png:kuafu#peasant.png:villager',
+    'chinese_hero': 'nezha_child.png:nezha#pioneer.png:pioneer',
+    'chinese_human': 'fire_archer.png:fire archer#ge_halberdier.png:ge halberdier',
+    'chinese_myth': 'qilin.png:qilin#qiongqi.png:qiongqi#yazi.png:yazi',
+    'chinese_power':
+        'creation.png:creation#peachblossomspring_power.png:peach blossom spring#prosperous_seeds.png:prosperous seeds',
+    'chinese_tech': 'kuafu_chieftain.png:kuafu chieftain',
+    'dock': 'dock.png:dock#purse_seine.png:purse seine',
+    'economy':
+        'bow_saw.png:bow saw#hand_axe.png:hand axe#husbandry.png:husbandry#pickaxe.png:pickaxe#quarry.png:quarry#shaft_mine.png:shaft mine',
+    'egyptians_civilian': 'laborer.png:villager',
+    'egyptians_hero': 'pharaoh.png:pharaoh#priest.png:priest',
+    'egyptians_human':
+        'axeman.png:axeman#camel_rider.png:camel rider#chariot_archer.png:chariot archer#slinger.png:slinger#spearman.png:spearman#war_elephant.png:war elephant',
+    'egyptians_myth':
+        'anubite.png:anubite#leviathan.png:leviathan#sphinx.png:sphinx#wadjet.png:wadjet',
+    'egyptians_power': 'prosperity.png:prosperity#rain.png:rain#vision.png:vision',
+    'egyptians_ship': 'ramming_galley.png:ramming galley',
+    'egyptians_tech':
+        'adze_of_wepwawet.png:adze of wepwawet#criosphinx.png:criosphinx#electrum_bullets.png:electrum bullets#feet_of_the_jackal.png:feet of the jackal#flood_of_the_nile.png:flood of the nile#heavy_chariot_archers.png:heavy chariot archer#hieracosphinx.png:hieracosphinx#levy_migdol_soldiers.png:levy migdol soldiers#medium_axemen.png:medium axemen#medium_slingers.png:medium slingers#medium_spearmen.png:medium spearmen#sacred_cats.png:sacred cat#serpent_spear.png:serpent spear#shaduf.png:shaduf',
+    'greeks_building': 'military_academy.png:military academy',
+    'greeks_civilian': 'villager_greek.png:villager',
+    'greeks_hero':
+        'achilles.png:achilles#ajax_spc.png:ajax#atalanta.png:atalanta#heracles.png:heracles#jason.png:jason#theseus.png:theseus',
+    'greeks_human':
+        'hippeus.png:hippeus#hoplite.png:hoplite#hypaspist.png:hypaspist#peltast.png:peltast#toxotes.png:toxotes',
+    'greeks_myth': 'centaur.png:centaur#cyclops.png:cyclops#pegasus.png:pegasus#scylla.png:scylla',
+    'greeks_power': 'bolt.png:bolt#lure_power.png:lure god power#sentinel_power.png:sentinel',
+    'greeks_tech': 'oracle.png:oracle',
+    'market': 'coinage.png:coinage#market.png:market',
+    'norse_building': 'dwarven_armory.png:dwarven armory#great_hall.png:great hall',
+    'norse_civilian': 'dwarf.png:dwarf#gatherer.png:villager',
+    'norse_hero': 'godi.png:godi#hersir.png:hersir',
+    'norse_human':
+        'berserk.png:berserk#huskarl.png:huskarl#jarl.png:jarl#raiding_cavalry.png:raiding cavalry#throwing_axeman.png:throwing axeman',
+    'norse_myth':
+        'battle_boar.png:battle boar#einherjar.png:einheri#mountain_giant.png:mountain giant#raven.png:raven#troll.png:troll#valkyrie.png:valkyrie',
+    'norse_power': 'dwarven_mine.png:dwarven mine#great_hunt.png:great_hunt#spy.png:spy',
+    'norse_ship': 'fishing_ship_norse.png:fishing ship',
+    'norse_tech':
+        'dwarven_breastplate.png:dwarven breastplate#hammer_of_thunder.png:hammer of thunder#rigsthula.png:rigsthula#safeguard.png:safeguard#winter_harvest.png:winter harvest',
+    'other': 'house.png:house',
+    'resource': 'favor.png:favor#food.png:food#gold.png:gold#wood.png:wood#worker.png:villager',
+    'tech_military':
+        'heavy_archers.png:heavy archers#heavy_cavalry.png:heavy cavalry#heavy_infantry.png:heavy infantry#medium_archers.png:medium archers#medium_cavalry.png:medium cavalry#medium_infantry.png:medium infantry',
+    'temple': 'temple.png:temple',
+    'atlanteans_minor_god':
+        'atlas.png:atlas#hekate.png:hecate#helios.png:helios#hyperion.png:hyperion#leto.png:leto#oceanus.png:oceanus#prometheus.png:prometheus#rheia.png:rheia#theia.png:theia',
+    'chinese_minor_god':
+        'chiyou.png:chiyou#gonggong.png:gonggong#goumang.png:goumang#houtu.png:houtu#huangdi.png:huangdi#nuba.png:nuba#rushou.png:rushou#xuannu.png:xuannu#zhurong.png:zhurong',
+    'egyptians_minor_god':
+        'anubis.png:anubis#bast.png:bast#horus.png:horus#nephthys.png:nephthys#osiris.png:osiris#ptah.png:ptah#sekhmet.png:sekhmet#sobek.png:sobek#thoth.png:thoth',
+    'greeks_minor_god':
+        'aphrodite.png:aphrodite#apollo.png:apollo#ares.png:ares#artemis.png:artemis#athena.png:athena#dionysus.png:dionysus#hephaestus.png:hephaestus#hera.png:hera#hermes.png:hermes',
+    'major_god':
+        'freyr.png:freyr#fuxi.png:fuxi#gaia.png:gaia#hades.png:hades#isis.png:isis#kronos.png:kronos#loki.png:loki#nuwa.png:nuwa#odin.png:odin#oranos.png:oranos#poseidon.png:poseidon#ra.png:ra#set.png:set#shennong.png:shennong#thor.png:thor#zeus.png:zeus',
+    'norse_minor_god':
+        'aegir.png:aegir#baldr.png:baldr#bragi.png:bragi#forseti.png:forseti#freyja.png:freyja#heimdall.png:heimdall#hel.png:hel#njord.png:njord#skadi.png:skadi#tyr.png:tyr#ullr.png:ullr#vidar.png:vidar'
+  };
+
+  // Split each string in a list of conversion from RTS Overlay to DoD clan icons.
+  let result = {};
+  for (const [folder, imagesConvert] of Object.entries(convertDict)) {
+    for (const imageConvert of imagesConvert.split('#')) {
+      const convertSplit = imageConvert.split(':');
+      console.assert(convertSplit.length === 2);
+      result[folder + '/' + convertSplit[0]] = convertSplit[1];
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Generate a CSV file to provide to DoD (Deities of Death) Clan members to add on
+ * 'https://thedodclan.com/build-orders'.
+ */
+function generateCSVForDodClan() {
+  // Check if build order is valid.
+  if (!checkValidBO()) {
+    alert(
+        'Build order is not valid and cannot be exported as CSV file to upload on DoD (Deities of Death) Clan page.');
+  } else {
+    // Get dictionary to convert images from RTS Overlay to DoD Clan icons
+    const convertDict = getAoMConvertDodClan();
+
+    // Age tracking
+    let currentAge = 1;  // Age 1 is Archaic
+    let advanceStep = false;
+
+    const ages = {1: 'Archaic', 2: 'Classical', 3: 'Heroic', 4: 'Mythic'};
+
+    // Name of the CSV file to export
+    const csvName = dataBO.major_god.toLowerCase().replace(/\s+/g, '_') + '_' +
+        dataBO.name.toLowerCase().replace(/\s+/g, '_') + '.csv';
+
+    // Convert BO content to string to add in a CSV file
+    let csvContent = 'sep=;';
+    csvContent += '\n' + dataBO.name + ';;;';
+    csvContent += '\nArchaic;;;';
+    csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
+
+    // Loop on all the BO steps
+    for (let i = 0; i < dataBO.build_order.length; i++) {
+      const step = dataBO.build_order[i];
+      const resources = step.resources;
+
+      // Check if age was updated
+      if (step.age > currentAge) {  // Advance to next age
+        csvContent += '\nAdvance to ' + (ages[step.age] || 'Wonder') + ' age;;;';
+        csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
+        currentAge = step.age;
+        advanceStep = true;
+      } else if (advanceStep) {  // Arriving to next age
+        csvContent += '\n' + (ages[currentAge] || 'Wonder') + ';;;';
+        csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
+        advanceStep = false;
+      }
+
+      // Add resources in the first column
+      csvContent += '\n' + (resources.food < 0 ? 'xx' : resources.food) + ' / ' +
+          (resources.wood < 0 ? 'xx' : resources.wood) + ' / ' +
+          (resources.gold < 0 ? 'xx' : resources.gold) + ' / ' +
+          (resources.favor < 0 ? 'xx' : resources.favor) + ' / ' +
+          (step.worker_count < 0 ? 'xx' : step.worker_count);
+
+      // Add time if present
+      if ('time' in step) {
+        csvContent += ' (' + step.time + ')';
+      }
+
+      // Loop on the notes
+      const notes = step.notes;
+      let noteCount = 0;
+      for (let j = 0; j < notes.length; j++) {
+        const note = notes[j];
+
+        // Replace each image entry with the DOD Clan image name, or an easy-to-read name
+        let updatedNote = note.replace(/@([^@]+)@/g, (match, p1) => {
+          let replacement;
+          if (convertDict.hasOwnProperty(p1)) {  // Image is present in the conversion dictionary
+            replacement = convertDict[p1];
+          } else {  // Image is missing from the dictionary
+            // Extract the file name (no path, no extension)
+            let parts = p1.split('/');
+            let fileName = parts.pop();
+            // Remove the extension
+            const dotIndex = fileName.lastIndexOf('.');
+            if (dotIndex !== -1) {
+              fileName = fileName.substring(0, dotIndex);
+            }
+            replacement = fileName.replace(/_/g, ' ');  // Replace underscores with spaces
+          }
+          // Always add one space before and after the replacement
+          return ' ' + replacement + ' ';
+        });
+
+        // Replace consecutive spaces with a single space, then trim the result
+        updatedNote = updatedNote.replace(/\s+/g, ' ').trim();
+
+        // Remove extra spaces inside parantheses
+        updatedNote = updatedNote.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+
+        // Max 4 columns, so max 3 notes per row (1st column is the resource distribution)
+        if (noteCount >= 3) {
+          csvContent += '\n';
+          noteCount = 0;
+        }
+        csvContent += ';' + updatedNote;
+        noteCount++;
+      }
+
+      // Add remaining ';' to keep 4 columns (1st column is the resource distribution)
+      for (let j = noteCount; j < 3; j++) {
+        csvContent += ';';
+      }
+    }
+
+    // Export as CSV
+    const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', csvName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Message to suggest CSV file to DoD Clan
+    if (localStorage.getItem('hideExportDoDMessage') !== 'true') {
+      const userChoice = confirm(
+          'Your build order was exported as a CSV file (' + csvName +
+          '). Visit https://thedodclan.com/build-orders to see how to suggest it (to publish on the corresponding website).' +
+          '\n\nHide this message next time?');
+      if (userChoice) {
+        localStorage.setItem('hideExportDoDMessage', 'true');
+      }
+    }
+  }
 }
 
 /**
@@ -7171,7 +7429,7 @@ function getBOTemplateSC2() {
  */
 function getImagesSC2() {
   // This is obtained using the 'python/utilities/list_images.py' script.
-  const imagesDict = {
+  let imagesDict = {
     'protoss_buildings':
         'Assimilator.png#Cybernetics_Core.png#Dark_Shrine.png#Fleet_Beacon.png#Forge.png#Gateway.png#Nexus.png#Photon_Cannon.png#Pylon.png#Robotics_Bay.png#Robotics_Facility.png#ShieldBattery.png#Stargate.png#StasisWard.png#Templar_Archives.png#Twilight_Council.png#Warp_Gate.png',
     'protoss_techs':

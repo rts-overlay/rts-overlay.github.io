@@ -1,3 +1,6 @@
+# 2025.06.16
+* DoD Clan BO exports added.
+
 # 2025.05.07
 * Improved web editor.
 * AoE2 updates for Three Kingdoms DLC.
