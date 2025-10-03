@@ -1,3 +1,10 @@
+# 2025.10.03
+* AoM
+    * Updates for Heavenly Spear DLC (Japanese pantheon).
+    * Reduce size of the images.
+* AoE2
+    * Reduce size of the images.
+
 # 2025.09.06
 * When image is not found, check with different extensions (.png, .jpg, .webp).
 * Use multiple JS files instead of a single one.
