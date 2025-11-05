@@ -1,4 +1,5 @@
 # 2025.11.05
+* Update AoE4 for Season 12 (Dynasties of the East).
 * Solve spinner stuck when loading another page.
 
 # 2025.10.03
