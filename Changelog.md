@@ -1,3 +1,6 @@
+# 2025.11.05
+* Solve spinner stuck when loading another page.
+
 # 2025.10.03
 * AoM
     * Updates for Heavenly Spear DLC (Japanese pantheon).
