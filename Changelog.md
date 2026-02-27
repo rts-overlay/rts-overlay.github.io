@@ -1,3 +1,16 @@
+# 2026.02.27
+* Most images converted from .png and .jpg to .webp.
+* Remove national flags images.
+* External websites links updates
+    * buildorderguide.com temporarily replaced by buildorderguide-3.vercel.app (while waiting for deployment issue to be solved).
+    * Remove age4builder.com links (seems to be down).
+    * Add links to RTS Builds for AoE2, AoE4 and AoM.
+    * Update button label to External website name instead of address.
+* AoE2
+    * Add "The Last Chieftains" civilizations (including images).
+* AoM
+    * Add "Demeter" major god (including images).
+
 # 2025.11.05
 * Update AoE4 for Season 12 (Dynasties of the East).
 * Solve spinner stuck when loading another page.

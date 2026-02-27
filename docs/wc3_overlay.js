@@ -14,9 +14,9 @@ function getResourceLineWC3(currentStep) {
   const gamePicturesFolder = 'assets/' + gameName + '/';
   const resourceFolder = gamePicturesFolder + 'resource/';
 
-  htmlString += getBOImageValue(resourceFolder + 'gold.png', currentStep, 'gold', true);
-  htmlString += getBOImageValue(resourceFolder + 'lumber.png', currentStep, 'lumber', true);
-  htmlString += getBOImageValue(resourceFolder + 'food.png', currentStep, 'food', true);
+  htmlString += getBOImageValue(resourceFolder + 'gold.webp', currentStep, 'gold', true);
+  htmlString += getBOImageValue(resourceFolder + 'lumber.webp', currentStep, 'lumber', true);
+  htmlString += getBOImageValue(resourceFolder + 'food.webp', currentStep, 'food', true);
 
   return htmlString;
 }
@@ -51,12 +51,13 @@ function checkValidBuildOrderWC3(nameBOMessage) {
 
     fields = [
       new FieldDefinition('notes', 'array of strings', true),
-      new FieldDefinition('time', 'string', false), new FieldDefinition('food', 'integer', false),
-      new FieldDefinition('gold', 'integer', false), new FieldDefinition('lumber', 'integer', false)
+      new FieldDefinition('time', 'string', false),
+      new FieldDefinition('food', 'integer', false),
+      new FieldDefinition('gold', 'integer', false),
+      new FieldDefinition('lumber', 'integer', false),
     ];
 
     return checkValidSteps(BONameStr, fields);
-
   } catch (e) {
     return invalidMsg(BONameStr + e);
   }
@@ -73,17 +74,18 @@ function checkValidBuildOrderWC3(nameBOMessage) {
 function getBOStepWC3(buildOrderData, copyStepID = -1) {
   if (buildOrderData && buildOrderData.length >= 1) {
     // Selected step or last step data (if not valid index)
-    const data = (0 <= copyStepID && copyStepID < buildOrderData.length) ?
-        buildOrderData[copyStepID] :
-        buildOrderData.at(-1);
+    const data =
+      0 <= copyStepID && copyStepID < buildOrderData.length
+        ? buildOrderData[copyStepID]
+        : buildOrderData.at(-1);
     return {
-      'food': ('food' in data) ? data['food'] : -1,
-      'gold': ('gold' in data) ? data['gold'] : -1,
-      'lumber': ('lumber' in data) ? data['lumber'] : -1,
-      'notes': ['Note']
+      food: 'food' in data ? data['food'] : -1,
+      gold: 'gold' in data ? data['gold'] : -1,
+      lumber: 'lumber' in data ? data['lumber'] : -1,
+      notes: ['Note'],
     };
   } else {
-    return {'food': -1, 'gold': -1, 'lumber': -1, 'notes': ['Note']};
+    return { food: -1, gold: -1, lumber: -1, notes: ['Note'] };
   }
 }
 
@@ -94,12 +96,12 @@ function getBOStepWC3(buildOrderData, copyStepID = -1) {
  */
 function getBOTemplateWC3() {
   return {
-    'race': 'Humans',
-    'opponent_race': 'Any',
-    'name': 'Build order name',
-    'author': 'Author',
-    'source': 'Source',
-    'build_order': [getBOStepWC3(null)]
+    race: 'Humans',
+    opponent_race: 'Any',
+    name: 'Build order name',
+    author: 'Author',
+    source: 'Source',
+    build_order: [getBOStepWC3(null)],
   };
 }
 
@@ -111,35 +113,35 @@ function getBOTemplateWC3() {
 function getImagesWC3() {
   // This is obtained using the 'python/utilities/list_images.py' script.
   let imagesDict = {
-    'human_building':
-        'altar_of_kings.png#arcane_sanctum.png#arcane_vault.png#barracks.png#blacksmith.png#farm.png#gryphon_aviary.png#lumber_mill.png#scout_tower.png#town_hall.png#workshop.png',
-    'human_hero': 'archmage.png#blood_mage.png#mountain_king.png#paladin.png',
-    'human_special': 'militia.png#phoenix.png#summon_water_elemental.png',
-    'human_unit':
-        'dragon_hawk_rider.png#flying_machine.png#footman.png#gryphon_rider.png#knight.png#mortar_team.png#peasant.png#priest.png#rifleman.png#siege_engine.png#sorceress.png#spell_breaker.png',
-    'night_elf_building':
-        'altar_of_elders.png#ancient_of_lore.png#ancient_of_war.png#ancient_of_wind.png#ancient_of_wonders.png#ancient_protector.png#chimaera_roost.png#hunters_hall.png#moon_well.png#tree_of_life.png',
-    'night_elf_hero':
-        'demon_hunter.png#keeper_of_the_grove.png#priestess_of_the_moon.png#warden.png',
-    'night_elf_special':
-        'avatar_of_vengeance.png#druid_of_the_claw.png#druid_of_the_talon.png#hippogryph_rider.png#owl_scout.png#spirit_of_vengeance.png#treant.png',
-    'night_elf_unit':
-        'archer.png#chimaera.png#druid_of_the_claw.png#druid_of_the_talon.png#dryad.png#faerie_dragon.png#glaive_thrower.png#hippogryph.png#huntress.png#mountain_giant.png#wisp.png',
-    'orc_building':
-        'altar_of_storms.png#barracks.png#beastiary.png#great_hall.png#orc_burrow.png#spirit_lodge.png#tauren_totem.png#voodoo_lounge.png#war_mill.png#watch_tower.png',
-    'orc_hero': 'blademaster.png#far_seer.png#shadow_hunter.png#tauren_chieftain.png',
-    'orc_special': 'serpent_ward.png#spirit_wolf.png#troll_berserker.png',
-    'orc_unit':
-        'demolisher.png#grunt.png#kodo_beast.png#peon.png#raider.png#shaman.png#spirit_walker.png#tauren.png#troll_batrider.png#troll_headhunter.png#wind_rider.png#witch_doctor.png',
-    'race': 'dice.png#human.png#night_elf.png#orc.png#undead.png',
-    'resource': 'food.png#gold.png#lumber.png',
-    'undead_building':
-        'altar_of_darkness.png#boneyard.png#crypt.png#graveyard.png#haunted_goldmine.png#necropolis.png#sacrificial_pit.png#slaughter_house.png#temple_of_the_damned.png#tomb_of_relics.png#ziggurat.png',
-    'undead_hero': 'crypt_lord.png#death_knight.png#dread_lord.png#lich.png',
-    'undead_special':
-        'carrion_beetle.png#destroyer.png#shade.png#skeletal_mage.png#skeleton_warrior.png',
-    'undead_unit':
-        'abomination.png#acolyte.png#banshee.png#crypt_fiend.png#frost_wyrm.png#gargoyle.png#ghoul.png#meat_wagon.png#necromancer.png#obsidian_statue.png'
+    human_building:
+      'altar_of_kings.webp#arcane_sanctum.webp#arcane_vault.webp#barracks.webp#blacksmith.webp#farm.webp#gryphon_aviary.webp#lumber_mill.webp#scout_tower.webp#town_hall.webp#workshop.webp',
+    human_hero: 'archmage.webp#blood_mage.webp#mountain_king.webp#paladin.webp',
+    human_special: 'militia.webp#phoenix.webp#summon_water_elemental.webp',
+    human_unit:
+      'dragon_hawk_rider.webp#flying_machine.webp#footman.webp#gryphon_rider.webp#knight.webp#mortar_team.webp#peasant.webp#priest.webp#rifleman.webp#siege_engine.webp#sorceress.webp#spell_breaker.webp',
+    night_elf_building:
+      'altar_of_elders.webp#ancient_of_lore.webp#ancient_of_war.webp#ancient_of_wind.webp#ancient_of_wonders.webp#ancient_protector.webp#chimaera_roost.webp#hunters_hall.webp#moon_well.webp#tree_of_life.webp',
+    night_elf_hero:
+      'demon_hunter.webp#keeper_of_the_grove.webp#priestess_of_the_moon.webp#warden.webp',
+    night_elf_special:
+      'avatar_of_vengeance.webp#druid_of_the_claw.webp#druid_of_the_talon.webp#hippogryph_rider.webp#owl_scout.webp#spirit_of_vengeance.webp#treant.webp',
+    night_elf_unit:
+      'archer.webp#chimaera.webp#druid_of_the_claw.webp#druid_of_the_talon.webp#dryad.webp#faerie_dragon.webp#glaive_thrower.webp#hippogryph.webp#huntress.webp#mountain_giant.webp#wisp.webp',
+    orc_building:
+      'altar_of_storms.webp#barracks.webp#beastiary.webp#great_hall.webp#orc_burrow.webp#spirit_lodge.webp#tauren_totem.webp#voodoo_lounge.webp#war_mill.webp#watch_tower.webp',
+    orc_hero: 'blademaster.webp#far_seer.webp#shadow_hunter.webp#tauren_chieftain.webp',
+    orc_special: 'serpent_ward.webp#spirit_wolf.webp#troll_berserker.webp',
+    orc_unit:
+      'demolisher.webp#grunt.webp#kodo_beast.webp#peon.webp#raider.webp#shaman.webp#spirit_walker.webp#tauren.webp#troll_batrider.webp#troll_headhunter.webp#wind_rider.webp#witch_doctor.webp',
+    race: 'dice.webp#human.webp#night_elf.webp#orc.webp#undead.webp',
+    resource: 'food.webp#gold.webp#lumber.webp',
+    undead_building:
+      'altar_of_darkness.webp#boneyard.webp#crypt.webp#graveyard.webp#haunted_goldmine.webp#necropolis.webp#sacrificial_pit.webp#slaughter_house.webp#temple_of_the_damned.webp#tomb_of_relics.webp#ziggurat.webp',
+    undead_hero: 'crypt_lord.webp#death_knight.webp#dread_lord.webp#lich.webp',
+    undead_special:
+      'carrion_beetle.webp#destroyer.webp#shade.webp#skeletal_mage.webp#skeleton_warrior.webp',
+    undead_unit:
+      'abomination.webp#acolyte.webp#banshee.webp#crypt_fiend.webp#frost_wyrm.webp#gargoyle.webp#ghoul.webp#meat_wagon.webp#necromancer.webp#obsidian_statue.webp',
   };
 
   // Split each string (e.g. 'image_0#image_1#image_2') in a list of images.
@@ -157,11 +159,11 @@ function getImagesWC3() {
  */
 function getFactionsWC3() {
   return {
-    'Humans': ['HUM', 'human.png'],
-    'Orcs': ['ORC', 'orc.png'],
-    'Night Elves': ['NIG', 'night_elf.png'],
-    'Undead': ['UND', 'undead.png'],
-    'Any': ['ANY', 'dice.png']
+    Humans: ['HUM', 'human.webp'],
+    Orcs: ['ORC', 'orc.webp'],
+    'Night Elves': ['NIG', 'night_elf.webp'],
+    Undead: ['UND', 'undead.webp'],
+    Any: ['ANY', 'dice.webp'],
   };
 }
 
@@ -196,22 +198,22 @@ function getVisualEditorWC3() {
 
   // Description for each column
   let columnsDescription = [
-    new SinglePanelColumn('time', common + 'icon/time.png'),
-    new SinglePanelColumn('food', resource + 'food.png'),
-    new SinglePanelColumn('gold', resource + 'gold.png'),
-    new SinglePanelColumn('lumber', resource + 'lumber.png')
+    new SinglePanelColumn('time', common + 'icon/time.webp'),
+    new SinglePanelColumn('food', resource + 'food.webp'),
+    new SinglePanelColumn('gold', resource + 'gold.webp'),
+    new SinglePanelColumn('lumber', resource + 'lumber.webp'),
   ];
 
-  columnsDescription[0].italic = true;                    // time
-  columnsDescription[1].bold = true;                      // food
-  columnsDescription[1].backgroundColor = [50, 50, 50];   // food
-  columnsDescription[2].backgroundColor = [167, 115, 0];  // gold
-  columnsDescription[3].backgroundColor = [80, 100, 0];   // lumber
+  columnsDescription[0].italic = true; // time
+  columnsDescription[1].bold = true; // food
+  columnsDescription[1].backgroundColor = [50, 50, 50]; // food
+  columnsDescription[2].backgroundColor = [167, 115, 0]; // gold
+  columnsDescription[3].backgroundColor = [80, 100, 0]; // lumber
 
-  columnsDescription[0].tooltip = 'step time as \'x:yy\'';  // time
-  columnsDescription[1].tooltip = 'food count';             // food
-  columnsDescription[2].tooltip = 'workers on gold';        // gold
-  columnsDescription[3].tooltip = 'workers on lumber';      // lumber
+  columnsDescription[0].tooltip = "step time as 'x:yy'"; // time
+  columnsDescription[1].tooltip = 'food count'; // food
+  columnsDescription[2].tooltip = 'workers on gold'; // gold
+  columnsDescription[3].tooltip = 'workers on lumber'; // lumber
 
   // Show only positive characters
   for (let i = 1; i <= 3; i++) {
@@ -241,17 +243,17 @@ function openSinglePanelPageWC3() {
 
   // Description for each column
   let columnsDescription = [
-    new SinglePanelColumn('time', common + 'icon/time.png'),
-    new SinglePanelColumn('food', resource + 'food.png'),
-    new SinglePanelColumn('gold', resource + 'gold.png'),
-    new SinglePanelColumn('lumber', resource + 'lumber.png')
+    new SinglePanelColumn('time', common + 'icon/time.webp'),
+    new SinglePanelColumn('food', resource + 'food.webp'),
+    new SinglePanelColumn('gold', resource + 'gold.webp'),
+    new SinglePanelColumn('lumber', resource + 'lumber.webp'),
   ];
 
-  columnsDescription[0].italic = true;                    // time
-  columnsDescription[0].textAlign = 'right';              // time
-  columnsDescription[1].bold = true;                      // food
-  columnsDescription[2].backgroundColor = [167, 115, 0];  // gold
-  columnsDescription[3].backgroundColor = [80, 100, 0];   // lumber
+  columnsDescription[0].italic = true; // time
+  columnsDescription[0].textAlign = 'right'; // time
+  columnsDescription[1].bold = true; // food
+  columnsDescription[2].backgroundColor = [167, 115, 0]; // gold
+  columnsDescription[3].backgroundColor = [80, 100, 0]; // lumber
 
   // all columns
   for (let i = 0; i <= 3; i++) {
