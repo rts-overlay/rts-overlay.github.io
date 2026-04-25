@@ -1,3 +1,8 @@
+## 2026.04.25
+* AoM
+    * Add Aztecs pantheon.
+    * Remove DoD Clan links and corresponding BO computation (DoD Clan stopped supporting RTS Overlay).
+
 ## 2026.03.12
 * AoE2
     * buildorderguide-3.vercel.app back to buildorderguide.com

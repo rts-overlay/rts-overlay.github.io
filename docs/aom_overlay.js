@@ -143,6 +143,8 @@ function getBOTemplateAoM() {
 function getWorkerTimeAoM(pantheon) {
   if (['Greeks', 'Egyptians', 'Norse', 'Chinese', 'Japanese'].includes(pantheon)) {
     return 18.0;
+  } else if (pantheon === 'Aztecs') {
+    return 17.0;
   } else if (pantheon === 'Atlanteans') {
     return 15.0; // 30 sec for a citizen with 2 pop
   } else {
@@ -170,6 +172,8 @@ function getPantheon(majorGod) {
     return 'Chinese';
   } else if (['Amaterasu', 'Tsukuyomi', 'Susanoo'].includes(majorGod)) {
     return 'Japanese';
+  } else if (['Huitzilopochtli', 'Quetzalcoatl', 'Tezcatlipoca'].includes(majorGod)) {
+    return 'Aztecs';
   } else {
     throw 'Unknown major god: ' + majorGod;
   }
@@ -352,6 +356,22 @@ function getImagesAoM() {
     atlanteans_siege: 'cheiroballista.webp#fire_siphon.webp',
     atlanteans_tech:
       'alluvial_clay.webp#asper_blood.webp#bite_of_the_shark.webp#celerity.webp#channels.webp#conscript_counter_soldiers.webp#conscript_mainline_soldiers.webp#conscript_palace_soldiers.webp#empyrian_speed.webp#eyes_of_atlas.webp#focus.webp#gemini.webp#guardian_of_io.webp#halo_of_the_sun.webp#heart_of_the_titans.webp#hephaestus_revenge.webp#heroic_renewal.webp#horns_of_consecration.webp#lance_of_stone.webp#lemuriandescendants.webp#levy_counter_soldiers.webp#levy_mainline_soldiers.webp#levy_palace_soldiers.webp#mythic_rejuvenation.webp#orichalcum_mail.webp#petrification.webp#poseidons_secret.webp#rheias_gift.webp#safe_passage.webp#temporal_chaos.webp#titan_shield.webp#volcanic_forge.webp#weightless_mace.webp',
+    aztecs_building:
+      'calpulli.webp#great_temple.webp#nobles_hut.webp#smoke_trap.webp#spike_trap.webp#tzompantli_tower.webp#war_hut.webp',
+    aztecs_civilian: 'villager_aztec.webp',
+    aztecs_hero:
+      'huitzilopochtli_unit.webp#quetzalcoatl_unit.webp#teixiptla_huitzilopochtli.webp#teixiptla_quetzalcoatl.webp#teixiptla_tezcatlipoca.webp#tezcatlipoca_unit.webp#warrior_priest.webp',
+    aztecs_human:
+      'coyote_warrior.webp#eagle_warrior.webp#jaguar_rider.webp#ocelotl_warrior.webp#otontin_smasher.webp#quimichin_spy.webp#shorn_one.webp#tequihua_archer.webp#tlamanih_spearman.webp',
+    aztecs_minor_god:
+      'coatlicue.webp#coyolxauhqui.webp#huehuecoyotl.webp#itzpapalotl.webp#malinalxochitl.webp#mictlantecuhtli.webp#patecatl.webp#tlaloc.webp#xolotl.webp',
+    aztecs_myth:
+      'ahuizotl.webp#axolotl.webp#axolotl_mutant.webp#ayotochtli.webp#centzon_totochtin.webp#chaneque.webp#maquizcoatl.webp#obsidian_butterfly.webp#quinametzin.webp#soul_guide.webp#titan_cipactli.webp#tunkuluchu.webp#tzitzimitl.webp',
+    aztecs_power:
+      'agave_bloom.webp#blood_pact.webp#corrupted_ground.webp#earth_monster.webp#infestation.webp#lullaby.webp#obsidian_mirror_power.webp#pillar_of_tlalocan.webp#purge.webp#starfall.webp#tailwind.webp#volcano.webp',
+    aztecs_ship: 'arrow_canoe.webp#atlatl_siege_canoe.webp#tepoztli_canoe.webp',
+    aztecs_tech:
+      'advanced_traps.webp#arrival_of_the_gods.webp#burnt_water.webp#centzon_huitznahua.webp#ceremonial_armor.webp#ceremonial_shields.webp#chinampas.webp#cipactlis_scales.webp#coatepec_shrines.webp#cosmic_guard.webp#coyolxauhqui_stone.webp#craft_workshop.webp#cuicacalli_training.webp#evening_star.webp#feast_of_sustenance.webp#feathered_armor.webp#feathered_shields.webp#flint_weapons.webp#flowery_wars.webp#four_jars.webp#jade_weapons.webp#livestock_pen.webp#lumber_outpost.webp#maguey_cultivation.webp#metzliapan.webp#mictecah.webp#nahuallatolli.webp#necklace_of_eyeballs.webp#new_fire_ceremony.webp#obsidian_knapping.webp#obsidian_weapons.webp#ocpatli_infusions.webp#old_coyotes_spirit.webp#omen_of_death.webp#omen_of_malinalco.webp#ometochtlis_revelry.webp#precious_bones.webp#sacred_armor.webp#sacred_shields.webp#serpent_skirt.webp#shards_of_itztli.webp#sting_of_yappan.webp#stoneskin_quinametzin.webp#string_of_hearts.webp#tecciztecatls_penance.webp#temiminaloyan_trials.webp#tepeyollotls_reach.webp#teponaztli_drums.webp#tlaloques.webp#toloache_trance.webp#tonacatepetl.webp#torch_of_misfortune.webp#twisted_limbs.webp#wings_of_itzpapalotl.webp#wings_of_the_south.webp',
     chinese_blessing:
       'creator_auspice.webp#shennong_gift_all.webp#yang.webp#yin.webp#yin_yang.webp',
     chinese_building:
@@ -429,7 +449,7 @@ function getImagesAoM() {
     japanese_tech:
       'ascetic_practices.webp#asymmetrical_bows.webp#burning_malevolence.webp#condemned_soul.webp#crushing_waves.webp#dan-no-ura_tactics.webp#deadly_rage.webp#deadly_snare.webp#den_den_drums.webp#divine_prefecture.webp#eight_banners.webp#eternal_haunting.webp#gales_fury.webp#gohei_wands.webp#golden_kite.webp#hannya_mask.webp#heavenly_barrage.webp#hunters_strength.webp#ivory_netsuke.webp#kagura.webp#katagi.webp#kumiki.webp#mechanical_artisans.webp#oni_mask.webp#onmyodo.webp#restless_army.webp#sacred_custodians.webp#sakura_gardens.webp#saltwater_spring.webp#sashimono_bannermen.webp#seaside_infiltrators.webp#sojutsu.webp#sumo_training.webp#ten-fist_sword.webp#tenshu.webp#thunderous_presence.webp#wind_sickles.webp#wisdom_of_nine.webp',
     major_god:
-      'amaterasu.webp#demeter.webp#freyr.webp#fuxi.webp#gaia.webp#hades.webp#isis.webp#kronos.webp#loki.webp#nuwa.webp#odin.webp#oranos.webp#poseidon.webp#ra.webp#set.webp#shennong.webp#susanoo.webp#thor.webp#tsukuyomi.webp#zeus.webp',
+      'amaterasu.webp#demeter.webp#freyr.webp#fuxi.webp#gaia.webp#hades.webp#huitzilopochtli.webp#isis.webp#kronos.webp#loki.webp#nuwa.webp#odin.webp#oranos.webp#poseidon.webp#quetzalcoatl.webp#ra.webp#set.webp#shennong.webp#susanoo.webp#tezcatlipoca.webp#thor.webp#tsukuyomi.webp#zeus.webp',
     market: 'ambassadors.webp#coinage.webp#market.webp#tax_collectors.webp',
     norse_building:
       'dwarven_armory.webp#great_hall.webp#hill_fort.webp#longhouse.webp#town_center_norse.webp',
@@ -467,247 +487,6 @@ function getImagesAoM() {
 }
 
 /**
- * Get the images conversion from RTS Overlay to DoD (Deities of Death) Clan icons (AoM).
- *
- * @returns Dictionary with conversion as 'RTS Overlay image: DoD Clan icon'.
- */
-function getAoMConvertDodClan() {
-  const convertDict = {
-    animal:
-      'baboon.webp:baboon#chicken.webp:chicken#cow.webp:cow#gazelle.webp:hunt#goat.webp:goat#pig.webp:pig',
-    armory:
-      'armory.webp:armory#copper_armor.webp:copper armor#copper_shields.webp:copper shields#copper_weapons.webp:copper weapons',
-    atlanteans_building:
-      'counter-barracks.webp:counter barrack#economic_guild.webp:economic guild#manor.webp:manor#military_barracks.webp:military barrack',
-    atlanteans_civilian: 'citizen.webp:citizen',
-    atlanteans_hero: 'oracle_hero.webp:oracle hero',
-    atlanteans_human:
-      'arcus.webp:arcus#contarius.webp:contarius#katapeltes.webp:katapeltes#murmillo.webp:murmillo#turma.webp:turma',
-    atlanteans_myth:
-      'automaton.webp:automaton#dryad.webp:dryad#promethean.webp:promethean#servant.webp:servant',
-    atlanteans_power:
-      'deconstruction.webp:deconstruction#gaia_forest.webp:gaia forest#valor.webp:valor',
-    chinese_building: 'imperial_academy.webp:imperial academy',
-    chinese_civilian: 'kuafu.webp:kuafu#peasant.webp:villager',
-    chinese_hero: 'nezha_child.webp:nezha#pioneer.webp:pioneer',
-    chinese_human: 'fire_archer.webp:fire archer#ge_halberdier.webp:ge halberdier',
-    chinese_myth: 'qilin.webp:qilin#qiongqi.webp:qiongqi#yazi.webp:yazi',
-    chinese_power:
-      'creation.webp:creation#peachblossomspring_power.webp:peach blossom spring#prosperous_seeds.webp:prosperous seeds',
-    chinese_tech: 'kuafu_chieftain.webp:kuafu chieftain',
-    dock: 'dock.webp:dock#purse_seine.webp:purse seine',
-    economy:
-      'bow_saw.webp:bow saw#hand_axe.webp:hand axe#husbandry.webp:husbandry#pickaxe.webp:pickaxe#quarry.webp:quarry#shaft_mine.webp:shaft mine',
-    egyptians_civilian: 'laborer.webp:villager',
-    egyptians_hero: 'pharaoh.webp:pharaoh#priest.webp:priest',
-    egyptians_human:
-      'axeman.webp:axeman#camel_rider.webp:camel rider#chariot_archer.webp:chariot archer#slinger.webp:slinger#spearman.webp:spearman#war_elephant.webp:war elephant',
-    egyptians_myth:
-      'anubite.webp:anubite#leviathan.webp:leviathan#sphinx.webp:sphinx#wadjet.webp:wadjet',
-    egyptians_power: 'prosperity.webp:prosperity#rain.webp:rain#vision.webp:vision',
-    egyptians_ship: 'ramming_galley.webp:ramming galley',
-    egyptians_tech:
-      'adze_of_wepwawet.webp:adze of wepwawet#criosphinx.webp:criosphinx#electrum_bullets.webp:electrum bullets#feet_of_the_jackal.webp:feet of the jackal#flood_of_the_nile.webp:flood of the nile#heavy_chariot_archers.webp:heavy chariot archer#hieracosphinx.webp:hieracosphinx#levy_migdol_soldiers.webp:levy migdol soldiers#medium_axemen.webp:medium axemen#medium_slingers.webp:medium slingers#medium_spearmen.webp:medium spearmen#sacred_cats.webp:sacred cat#serpent_spear.webp:serpent spear#shaduf.webp:shaduf',
-    greeks_building: 'military_academy.webp:military academy',
-    greeks_civilian: 'villager_greek.webp:villager',
-    greeks_hero:
-      'achilles.webp:achilles#ajax_spc.webp:ajax#atalanta.webp:atalanta#heracles.webp:heracles#jason.webp:jason#theseus.webp:theseus',
-    greeks_human:
-      'hippeus.webp:hippeus#hoplite.webp:hoplite#hypaspist.webp:hypaspist#peltast.webp:peltast#toxotes.webp:toxotes',
-    greeks_myth:
-      'centaur.webp:centaur#cyclops.webp:cyclops#pegasus.webp:pegasus#scylla.webp:scylla',
-    greeks_power: 'bolt.webp:bolt#lure_power.webp:lure god power#sentinel_power.webp:sentinel',
-    greeks_tech: 'oracle.webp:oracle',
-    market: 'coinage.webp:coinage#market.webp:market',
-    norse_building: 'dwarven_armory.webp:dwarven armory#great_hall.webp:great hall',
-    norse_civilian: 'dwarf.webp:dwarf#gatherer.webp:villager',
-    norse_hero: 'godi.webp:godi#hersir.webp:hersir',
-    norse_human:
-      'berserk.webp:berserk#huskarl.webp:huskarl#jarl.webp:jarl#raiding_cavalry.webp:raiding cavalry#throwing_axeman.webp:throwing axeman',
-    norse_myth:
-      'battle_boar.webp:battle boar#einherjar.webp:einheri#mountain_giant.webp:mountain giant#raven.webp:raven#troll.webp:troll#valkyrie.webp:valkyrie',
-    norse_power: 'dwarven_mine.webp:dwarven mine#great_hunt.webp:great_hunt#spy.webp:spy',
-    norse_ship: 'fishing_ship_norse.webp:fishing ship',
-    norse_tech:
-      'dwarven_breastplate.webp:dwarven breastplate#hammer_of_thunder.webp:hammer of thunder#rigsthula.webp:rigsthula#safeguard.webp:safeguard#winter_harvest.webp:winter harvest',
-    other: 'house.webp:house',
-    resource: 'favor.webp:favor#food.webp:food#gold.webp:gold#wood.webp:wood#worker.webp:villager',
-    tech_military:
-      'heavy_archers.webp:heavy archers#heavy_cavalry.webp:heavy cavalry#heavy_infantry.webp:heavy infantry#medium_archers.webp:medium archers#medium_cavalry.webp:medium cavalry#medium_infantry.webp:medium infantry',
-    temple: 'temple.webp:temple',
-    atlanteans_minor_god:
-      'atlas.webp:atlas#hekate.webp:hecate#helios.webp:helios#hyperion.webp:hyperion#leto.webp:leto#oceanus.webp:oceanus#prometheus.webp:prometheus#rheia.webp:rheia#theia.webp:theia',
-    chinese_minor_god:
-      'chiyou.webp:chiyou#gonggong.webp:gonggong#goumang.webp:goumang#houtu.webp:houtu#huangdi.webp:huangdi#nuba.webp:nuba#rushou.webp:rushou#xuannu.webp:xuannu#zhurong.webp:zhurong',
-    egyptians_minor_god:
-      'anubis.webp:anubis#bast.webp:bast#horus.webp:horus#nephthys.webp:nephthys#osiris.webp:osiris#ptah.webp:ptah#sekhmet.webp:sekhmet#sobek.webp:sobek#thoth.webp:thoth',
-    greeks_minor_god:
-      'aphrodite.webp:aphrodite#apollo.webp:apollo#ares.webp:ares#artemis.webp:artemis#athena.webp:athena#dionysus.webp:dionysus#hephaestus.webp:hephaestus#hera.webp:hera#hermes.webp:hermes',
-    major_god:
-      'freyr.webp:freyr#fuxi.webp:fuxi#gaia.webp:gaia#hades.webp:hades#isis.webp:isis#kronos.webp:kronos#loki.webp:loki#nuwa.webp:nuwa#odin.webp:odin#oranos.webp:oranos#poseidon.webp:poseidon#ra.webp:ra#set.webp:set#shennong.webp:shennong#thor.webp:thor#zeus.webp:zeus',
-    norse_minor_god:
-      'aegir.webp:aegir#baldr.webp:baldr#bragi.webp:bragi#forseti.webp:forseti#freyja.webp:freyja#heimdall.webp:heimdall#hel.webp:hel#njord.webp:njord#skadi.webp:skadi#tyr.webp:tyr#ullr.webp:ullr#vidar.webp:vidar',
-  };
-
-  // Split each string in a list of conversion from RTS Overlay to DoD clan icons.
-  let result = {};
-  for (const [folder, imagesConvert] of Object.entries(convertDict)) {
-    for (const imageConvert of imagesConvert.split('#')) {
-      const convertSplit = imageConvert.split(':');
-      console.assert(convertSplit.length === 2);
-      result[folder + '/' + convertSplit[0]] = convertSplit[1];
-    }
-  }
-
-  return result;
-}
-
-/**
- * Generate a CSV file to provide to DoD (Deities of Death) Clan members to add on
- * 'https://thedodclan.com/build-orders'.
- */
-function generateCSVForDodClan() {
-  // Check if build order is valid.
-  if (!checkValidBO()) {
-    alert(
-      'Build order is not valid and cannot be exported as CSV file to upload on DoD (Deities of Death) Clan page.'
-    );
-  } else {
-    // Get dictionary to convert images from RTS Overlay to DoD Clan icons
-    const convertDict = getAoMConvertDodClan();
-
-    // Age tracking
-    let currentAge = 1; // Age 1 is Archaic
-    let advanceStep = false;
-
-    const ages = { 1: 'Archaic', 2: 'Classical', 3: 'Heroic', 4: 'Mythic' };
-
-    // Name of the CSV file to export
-    const csvName =
-      dataBO.major_god.toLowerCase().replace(/\s+/g, '_') +
-      '_' +
-      dataBO.name.toLowerCase().replace(/\s+/g, '_') +
-      '.csv';
-
-    // Convert BO content to string to add in a CSV file
-    let csvContent = 'sep=;';
-    csvContent += '\n' + dataBO.name + ';;;';
-    csvContent += '\nArchaic;;;';
-    csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
-
-    // Loop on all the BO steps
-    for (let i = 0; i < dataBO.build_order.length; i++) {
-      const step = dataBO.build_order[i];
-      const resources = step.resources;
-
-      // Check if age was updated
-      if (step.age > currentAge) {
-        // Advance to next age
-        csvContent += '\nAdvance to ' + (ages[step.age] || 'Wonder') + ' age;;;';
-        csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
-        currentAge = step.age;
-        advanceStep = true;
-      } else if (advanceStep) {
-        // Arriving to next age
-        csvContent += '\n' + (ages[currentAge] || 'Wonder') + ';;;';
-        csvContent += '\nFood / Wood / Gold / Favor / Villager;;;';
-        advanceStep = false;
-      }
-
-      // Add resources in the first column
-      csvContent +=
-        '\n' +
-        (resources.food < 0 ? 'xx' : resources.food) +
-        ' / ' +
-        (resources.wood < 0 ? 'xx' : resources.wood) +
-        ' / ' +
-        (resources.gold < 0 ? 'xx' : resources.gold) +
-        ' / ' +
-        (resources.favor < 0 ? 'xx' : resources.favor) +
-        ' / ' +
-        (step.worker_count < 0 ? 'xx' : step.worker_count);
-
-      // Add time if present
-      if ('time' in step) {
-        csvContent += ' (' + step.time + ')';
-      }
-
-      // Loop on the notes
-      const notes = step.notes;
-      let noteCount = 0;
-      for (let j = 0; j < notes.length; j++) {
-        const note = notes[j];
-
-        // Replace each image entry with the DOD Clan image name, or an easy-to-read name
-        let updatedNote = note.replace(/@([^@]+)@/g, (match, p1) => {
-          let replacement;
-          if (convertDict.hasOwnProperty(p1)) {
-            // Image is present in the conversion dictionary
-            replacement = convertDict[p1];
-          } else {
-            // Image is missing from the dictionary
-            // Extract the file name (no path, no extension)
-            let parts = p1.split('/');
-            let fileName = parts.pop();
-            // Remove the extension
-            const dotIndex = fileName.lastIndexOf('.');
-            if (dotIndex !== -1) {
-              fileName = fileName.substring(0, dotIndex);
-            }
-            replacement = fileName.replace(/_/g, ' '); // Replace underscores with spaces
-          }
-          // Always add one space before and after the replacement
-          return ' ' + replacement + ' ';
-        });
-
-        // Replace consecutive spaces with a single space, then trim the result
-        updatedNote = updatedNote.replace(/\s+/g, ' ').trim();
-
-        // Remove extra spaces inside parantheses
-        updatedNote = updatedNote.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
-
-        // Max 4 columns, so max 3 notes per row (1st column is the resource distribution)
-        if (noteCount >= 3) {
-          csvContent += '\n';
-          noteCount = 0;
-        }
-        csvContent += ';' + updatedNote;
-        noteCount++;
-      }
-
-      // Add remaining ';' to keep 4 columns (1st column is the resource distribution)
-      for (let j = noteCount; j < 3; j++) {
-        csvContent += ';';
-      }
-    }
-
-    // Export as CSV
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', csvName);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Message to suggest CSV file to DoD Clan
-    if (localStorage.getItem('hideExportDoDMessage') !== 'true') {
-      const userChoice = confirm(
-        'Your build order was exported as a CSV file (' +
-          csvName +
-          '). Visit https://thedodclan.com/build-orders to see how to suggest it (to publish on the corresponding website).' +
-          '\n\nHide this message next time?'
-      );
-      if (userChoice) {
-        localStorage.setItem('hideExportDoDMessage', 'true');
-      }
-    }
-  }
-}
-
-/**
  * Get the factions with 3 letters shortcut and icon, for AoM.
  *
  * @returns Dictionary with faction name as key, and its 3 letters + image as value.
@@ -740,6 +519,10 @@ function getFactionsAoM() {
     Amaterasu: ['AMA', 'amaterasu.webp'],
     Tsukuyomi: ['TSU', 'tsukuyomi.webp'],
     Susanoo: ['SUS', 'susanoo.webp'],
+    // Aztecs
+    Huitzilopochtli: ['HUI', 'huitzilopochtli.webp'],
+    Quetzalcoatl: ['QUE', 'quetzalcoatl.webp'],
+    Tezcatlipoca: ['TEZ', 'tezcatlipoca.webp'],
   };
 }
 
