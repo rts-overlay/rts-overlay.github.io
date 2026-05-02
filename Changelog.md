@@ -1,3 +1,6 @@
+## 2026.05.02
+* Add RTS Builds links to sc2 and wc3.
+
 ## 2026.04.29
 * WC3
     * Add missing icons.
