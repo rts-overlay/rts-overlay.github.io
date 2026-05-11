@@ -1,3 +1,7 @@
+## 2026.05.11
+* AoE4
+    * Add Jin dynasty civilization.
+
 ## 2026.05.02
 * Add RTS Builds links to sc2 and wc3.
 
