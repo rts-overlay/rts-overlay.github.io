@@ -1,3 +1,7 @@
+## 2026.05.13
+* AoE2
+    * Add "All" build orders filtering option.
+
 ## 2026.05.11
 * AoE4
     * Add Jin dynasty civilization.
