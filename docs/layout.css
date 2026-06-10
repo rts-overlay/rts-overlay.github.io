@@ -2,49 +2,81 @@
 
 /* Define parameters */
 :root {
-    /* Police */
-    --font_family: Arial, Helvetica, sans-serif;
+    /* Font */
+    --font_family: 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+
+    /* Colors */
+    --primary-color: #072261;
+    --primary-hover: #051848;
+    --accent-color: #bf0001;
+    --primary-background: #dcdcdc;
+    --primary-text: #212529;
+    --primary-text-light: #ffffff;
+    --primary-border: #dee2e6;
+    --primary-border-dark: #495057;
+
     /* Build Order (BO) panel */
-    --bo_panel_text_color: rgb(255, 255, 255);
-    --bo_panel_background_color: rgb(70, 70, 70);
-    --bo_panel_emphasis_color: rgb(0, 62, 124);
-    --number_select_width: 40px;
+    --bo_panel_text_color: var(--primary-text-light);
+    --bo_panel_background_color: #343a40;
+    --bo_panel_emphasis_color: var(--primary-color);
+
+    /* Buttons */
+    --button_color: var(--primary-text-light);
+    --no_selected_button_color: #d2d2d2;
+
+    /* Toggle */
+    --toggle_left_color: var(--primary-color);
+    --toggle_right_color: var(--accent-color);
+    --toggle_slider_color: var(--primary-text-light);
+
+    /* Tooltips */
+    --tooltip_color: var(--primary-text-light);
+    --tooltip_background_color: #000000;
+
+    /* Rest of your existing variables remain unchanged */
+    --number_select_width: 35px;
+    --number_select_height: 18px;
+    --image_select_height: 25px;
     --number_select_radius: 5px;
-    --slider_horizontal_space: 15px;
-    --bo_panel_padding: 10px;
-    --bo_panel_lines_half_vertical_spacing: 5px;
+    --slider_horizontal_space: 20px;
+    --bo_panel_padding: 12px;
+    --bo_panel_lines_half_vertical_spacing: 6px;
     --bo_line_config_elements_gap: 10px;
     --bo_line_resources_elements_gap: 8px;
     --bo_line_note_elements_gap: 5px;
     --bo_timing_note_min_width: 40px;
     --bo_timing_padding_right: 10px;
+
     /* Images selection */
     --images_copy_min_width: 40%;
-    --images_bo_display_background_color: rgb(70, 70, 70);
     --images_bo_display_border_radius: 10px;
-    --images_bo_display_padding: 8px;
-    --images_bo_display_gap: 5px;
+    --images_bo_display_padding: 10px;
+    --images_bo_display_gap: 8px;
+
     /* Configuration page */
     --main_column_gap: 5px;
     --config_row_gap: 5px;
-    --text_full_line_horizontal_space: 10px;
-    --text_full_line_vertical_space: 10px;
+    --section_title_horizontal_space: 10px;
+    --section_title_vertical_space: 12px;
+    --section_title_top_space: 12px;
+    --section_title_bottom_space: 4px;
     --timer_offset_width: 40px;
     --configuration_text_font_size: 0.9em;
-    --main_instructions_font_size: 0.95em;
+    --main_instructions_font_size: 0.9em;
     --search_key_font_size: 0.9em;
-    --search_key_selected_color: rgb(185, 0, 0);
-    --reference_color: rgb(120, 120, 120);
-    --background_color: rgb(220, 220, 220);
-    --footer_color: rgb(120, 120, 120);
+    --search_key_selected_color: var(--accent-color);
+    --reference_color: #6c757d;
+    --background_color: var(--primary-background);
+    --footer_color: #6c757d;
     --footer_font_size: 0.85em;
     --footer_top_space: 10px;
-    --page_top_space: 20px;
-    --preview_panel_top_space: 30px;
-    --images_bo_display_top_space: 10px;
-    --div_vertical_space: 10px;
-    --radio_button_text: 0.85em;
-    --side_selection_text_space: 5px;
+    --preview_panel_top_space: 35px;
+    --toggles_horizontal_space: 10px;
+    --images_bo_display_top_space: 15px;
+    --div_vertical_space: 14px;
+    --radio_button_text: 0.9em;
+    --side_selection_text_space: 8px;
+
     /* Toggle */
     --toggle_radius: 10px;
     --toggle_slider_diameter: 12px;
@@ -52,56 +84,64 @@
     --toggle_slider_vertical_shift: 4px;
     --toggle_slider_translation: 16px;
     --toggle_translation_time: 0.5s;
-    --toggle_left_color: rgb(7, 34, 97);
-    --toggle_right_color: rgb(185, 0, 0);
-    --toggle_slider_color: rgb(255, 255, 255);
+    --toggle_left_color: var(--primary-color);
+    --toggle_right_color: #e74c3c;
+    --toggle_slider_color: var(--primary-text-light);
+
     /* Build order design */
     --bo_text_area_width: 100%;
     --bo_text_area_height: 55%;
-    --bo_text_area_color: rgb(0, 0, 0);
-    --bo_text_area_background_color: rgb(255, 255, 255);
+    --bo_text_area_color: var(--primary-text);
+    --bo_text_area_background_color: var(--primary-text-light);
     --bo_text_area_font_size: 1.05em;
-    --bo_text_area_text_inner_padding: 15px;
+    --bo_text_area_text_inner_padding: 18px;
     --bo_text_area_border_size: 2px;
-    --bo_text_area_border_color: rgb(0, 0, 0);
+    --bo_text_area_border_color: var(--primary-border);
     --bo_design_border_radius: 10px;
+    --design_column_top_space: 30px;
     --bo_visual_desing_max_width: 50vw;
     --bo_visual_desing_max_height: 60vh;
-    --bo_design_buttons_space: 5px;
-    --bo_design_select_space: 10px;
-    --bo_design_non_editable_color: rgb(180, 180, 180);
-    --bo_design_vertical_space: 5px;
+    --bo_design_buttons_space: 8px;
+    --bo_design_select_space: 12px;
+    --bo_design_non_editable_color: #b0b0b0;
+    --bo_design_vertical_space: 8px;
     --bo_visual_design_padding: 15px;
     --bo_visual_design_line_start: 2.5%;
     --bo_visual_design_line_size: 95%;
-    --bo_visual_design_line_color: rgb(150, 150, 150);
+    --bo_visual_design_line_color: #969696;
+
     /* Grid image selector with '@' suggestions */
-    --grid_selector_background_color: rgb(0, 0, 0);
+    --grid_selector_background_color: #000000;
+
     /* Buttons */
-    --button_color: rgb(255, 255, 255);
-    --no_selected_button_color: rgb(210, 210, 210);
+    --button_color: var(--primary-text-light);
+    --no_selected_button_color: #d2d2d2;
     --button_border_size: 1px;
-    --button_border_color: rgb(0, 0, 0);
+    --button_border_color: #000000;
     --button_border_radius: 5px;
     --button_vertical_padding: 3px;
     --button_horizontal_padding: 6px;
     --button_shadow_offset_x: 2px;
     --button_shadow_offset_y: 2px;
     --button_shadow_blur_radius: 2px;
-    --button_shadow_color: rgb(0, 0, 0);
+    --button_shadow_color: rgba(0, 0, 0, 0.2);
     --button_hover_left_shift: -2px;
     --button_hover_top_shift: -2px;
+
     /* Tooltips */
-    --tooltip_color: rgb(255, 255, 255);
-    --tooltip_background_color: rgb(0, 0, 0);
+    --tooltip_color: var(--primary-text-light);
+    --tooltip_background_color: #000000;
     --tooltip_border_radius: 5px;
-    --tooltip_padding_vertical: 12px;
-    --tooltip_padding_horizontal: 12px;
+    --tooltip_padding_vertical: 14px;
+    --tooltip_padding_horizontal: 14px;
     --tooltip_shift: calc(100% + 5px);
     --tooltip_delay: 1.5s;
     --tooltip_rts_info_delay: 0s;
-}
 
+    /* Background color */
+    --background_color_width: 40px;
+    --background_color_height: 25px;
+}
 
 /* --- Configuration window --- */
 
@@ -123,6 +163,30 @@ a {
     color: var(--reference_color);
     font-weight: bold;
     text-decoration: none;
+}
+
+/* Fix for tooltip inside <a> tags */
+a .tooltiptext_left,
+a .tooltiptext_right {
+    font-weight: normal !important;
+}
+
+/* Section Titles */
+.section_title {
+    width: 100%;
+    text-align: center;
+    border-bottom: 1px solid;
+    line-height: 0.1em;
+    margin-top: var(--section_title_vertical_space);
+    margin-bottom: var(--section_title_vertical_space);
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.section_title span {
+    background: var(--background_color);
+    padding: 0 var(--section_title_horizontal_space);
+    font-size: var(--configuration_text_font_size);
 }
 
 /* Main body of the configuration page in two columns */
@@ -151,22 +215,6 @@ a {
     gap: var(--config_row_gap);
 }
 
-/* Text with full line on the side */
-.text_full_line_row {
-    width: 100%;
-    text-align: center;
-    border-bottom: 1px solid;
-    line-height: 0.1em;
-    margin-top: var(--text_full_line_vertical_space);
-    margin-bottom: var(--text_full_line_vertical_space);
-}
-
-.text_full_line_row span {
-    background: var(--background_color);
-    padding: 0 var(--text_full_line_horizontal_space);
-    font-size: var(--configuration_text_font_size);
-}
-
 /* Buttons */
 .button {
     background-color: var(--button_color);
@@ -176,13 +224,36 @@ a {
     padding-bottom: var(--button_vertical_padding);
     padding-left: var(--button_horizontal_padding);
     padding-right: var(--button_horizontal_padding);
+    transition: all 0.2s ease;
+    /* Smooth transition for all properties */
+    cursor: pointer;
+    font-size: var(--radio_button_text);
+    color: var(--primary-text);
+    /* Default text color for buttons */
 }
 
+/* Hover state: Darker background, subtle shadow, and shift */
 .button:hover {
+    background-color: var(--primary-color);
+    color: var(--primary-text-light);
+    transform: translate(var(--button_hover_left_shift), var(--button_hover_top_shift));
     box-shadow: var(--button_shadow_offset_x) var(--button_shadow_offset_y) var(--button_shadow_blur_radius) var(--button_shadow_color);
-    position: relative;
-    left: var(--button_hover_left_shift);
-    top: var(--button_hover_top_shift);
+}
+
+/* Active state: Slightly darker background */
+.button:active {
+    background-color: var(--primary-hover);
+    transform: translate(0, 0);
+    /* Reset shift to give a "pressed" feel */
+    box-shadow: none;
+    /* Remove shadow when pressed */
+}
+
+/* Focus state: Visible outline for keyboard navigation */
+.button:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    /* Space between button and outline */
 }
 
 /* Search library line */
@@ -195,7 +266,7 @@ a {
     color: var(--search_key_selected_color);
 }
 
-/* Radio buttons to select the main configuration */
+/* Radio selector buttons (to match the button style) */
 .radio_selector input[type="radio"] {
     display: none;
 }
@@ -203,10 +274,26 @@ a {
 .radio_selector label {
     background-color: var(--no_selected_button_color);
     font-size: var(--radio_button_text);
+    border: var(--button_border_size) var(--button_border_color) solid;
+    border-radius: var(--button_border_radius);
+    padding: var(--button_vertical_padding) var(--button_horizontal_padding);
+    transition: all 0.2s ease;
+    /* Smooth transition */
+    cursor: pointer;
+    color: var(--primary-text);
+    /* Dark text for unselected buttons */
 }
 
 .radio_selector input[type="radio"]:checked+label {
-    background-color: var(--button_color);
+    background-color: var(--primary-color);
+    color: var(--primary-text-light);
+    transform: translate(var(--button_hover_left_shift), var(--button_hover_top_shift));
+    box-shadow: var(--button_shadow_offset_x) var(--button_shadow_offset_y) var(--button_shadow_blur_radius) var(--button_shadow_color);
+}
+
+.radio_selector input[type="radio"]:focus+label {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }
 
 /* Space between specific <div> sections */
@@ -214,9 +301,10 @@ a {
     margin-top: var(--div_vertical_space);
 }
 
-/* Optional timing offset */
-#time_offset {
-    width: var(--timer_offset_width);
+/* Background color widget */
+#bo_background_color {
+    width: var(--background_color_width);
+    height: var(--background_color_height);
 }
 
 /* Vertical space to the preview panel/salamander icon */
@@ -224,62 +312,84 @@ a {
     padding-top: var(--preview_panel_top_space);
 }
 
-/* Tooltip */
-.tooltip {
-    /* Tooltip position is relative to its parent */
-    position: relative;
+#pip_window_toggle,
+#auto_resize_toggle {
+    margin-right: var(--toggles_horizontal_space);
 }
 
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+/* Tooltip text (left and right) */
 .tooltip .tooltiptext_left,
 .tooltip .tooltiptext_right {
-    /* Tooltip format */
     white-space: nowrap;
     color: var(--tooltip_color);
     background-color: var(--tooltip_background_color);
     border-radius: var(--tooltip_border_radius);
-    padding-top: var(--tooltip_padding_vertical);
-    padding-bottom: var(--tooltip_padding_vertical);
-    padding-left: var(--tooltip_padding_horizontal);
-    padding-right: var(--tooltip_padding_horizontal);
-
-    /* Tooltip position */
+    padding: var(--tooltip_padding_vertical) var(--tooltip_padding_horizontal);
+    font-size: 0.95em;
     position: absolute;
-    z-index: 1;
-
-    /* Tooltip not visible by default */
+    z-index: 1000;
     opacity: 0;
     visibility: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+    transform: scale(0.95);
+    font-weight: normal;
+    /* Explicitly set to normal */
 }
 
+/* Left tooltip */
 .tooltip .tooltiptext_left {
-    /* Tooltip on the left */
-    right: var(--tooltip_shift);
+    right: calc(100% + 10px);
+    transform-origin: right center;
 }
 
+/* Right tooltip */
 .tooltip .tooltiptext_right {
-    /* Tooltip on the right */
-    left: var(--tooltip_shift);
+    left: calc(100% + 10px);
+    transform-origin: left center;
 }
 
+/* Hover state */
 .tooltip:hover .tooltiptext_left,
 .tooltip:hover .tooltiptext_right {
-    /* Tooltip visible after a short hovering time */
     opacity: 1;
     visibility: visible;
-    transition: opacity;
-    transition-delay: var(--tooltip_delay);
+    transform: scale(1);
+    transition-delay: 0.2s;
 }
 
+/* Override for RTS info tooltip (instant) */
 #tooltip_rts_overlay_info {
     font-size: var(--main_instructions_font_size);
-    /* Overwrite the hovering time for the main RTS Overlay info */
-    transition-delay: var(--tooltip_rts_info_delay);
+    transition-delay: 0s;
+}
+
+/* Fix for input buttons inside <a> tags */
+a input.button {
+    font-weight: normal;
 }
 
 /* Selection for the build order panel */
 .bo_panel_number_select {
     width: var(--number_select_width);
     border-radius: var(--number_select_radius);
+    height: var(--number_select_height);
+}
+
+/* Style for the image class selection dropdown */
+#image_class_selection {
+    height: var(--image_select_height);
+    padding: 2px 4px;
+    font-size: var(--radio_button_text);
+    border-radius: var(--button_border_radius);
+    border: var(--button_border_size) var(--button_border_color) solid;
+    color: var(--primary-text);
 }
 
 #bo_fontsize_value {
@@ -291,8 +401,8 @@ a {
     font-size: var(--configuration_text_font_size);
 }
 
-/* Text on to select the overlay side */
-#side_selection_text {
+/* Text to select the overlay side */
+#side_selection_text_space {
     padding-left: var(--side_selection_text_space);
 }
 
@@ -302,6 +412,7 @@ a {
     display: inline-block;
     width: calc(var(--toggle_slider_diameter) + var(--toggle_slider_translation) + 2 * var(--toggle_slider_horizontal_shift));
     height: calc(var(--toggle_slider_diameter) + 2 * var(--toggle_slider_vertical_shift));
+    margin-right: 1px;
 }
 
 .switch input {
@@ -318,8 +429,8 @@ a {
     right: 0;
     bottom: 0;
     background-color: var(--toggle_left_color);
-    -webkit-transition: var(--toggle_translation_time);
     transition: var(--toggle_translation_time);
+    border-radius: var(--toggle_radius);
 }
 
 .slider:before {
@@ -330,8 +441,8 @@ a {
     left: var(--toggle_slider_horizontal_shift);
     bottom: var(--toggle_slider_vertical_shift);
     background-color: var(--toggle_slider_color);
-    -webkit-transition: var(--toggle_translation_time);
     transition: var(--toggle_translation_time);
+    border-radius: 50%;
 }
 
 input:checked+.slider {
@@ -339,38 +450,29 @@ input:checked+.slider {
 }
 
 input:checked+.slider:before {
-    -webkit-transform: translateX(var(--toggle_slider_translation));
-    -ms-transform: translateX(var(--toggle_slider_translation));
     transform: translateX(var(--toggle_slider_translation));
-}
-
-.slider.round {
-    border-radius: var(--toggle_radius);
-}
-
-.slider.round:before {
-    border-radius: 50%;
 }
 
 /* BO text area (raw JSON) */
 #bo_design_raw {
     width: var(--bo_text_area_width);
     height: var(--bo_text_area_height);
-
     color: var(--bo_text_area_color);
     background-color: var(--bo_text_area_background_color);
     font-size: var(--bo_text_area_font_size);
-
-    /* Inner padding from text to border */
     padding: var(--bo_text_area_text_inner_padding);
     box-sizing: border-box;
-
-    /* Border */
-    border: var(--bo_text_area_border_size), var(--bo_text_area_border_color) solid;
+    border: 2px solid #000000;
+    /* Black outline for the raw editor panel */
     border-radius: var(--bo_design_border_radius);
 }
 
-/* Bo visual design */
+/* Choice between raw and visual design */
+#bo_design_indication {
+    margin-top: var(--design_column_top_space);
+}
+
+/* BO visual design */
 #bo_design_visual {
     max-width: var(--bo_visual_desing_max_width);
     max-height: var(--bo_visual_desing_max_height);
@@ -481,7 +583,6 @@ footer {
     font-style: italic;
 }
 
-
 /* --- Overlay window --- */
 
 /* Body of the overlay */
@@ -490,10 +591,8 @@ footer {
     padding: 0;
     background-color: var(--bo_panel_background_color);
     display: inline-block;
-    /* Hide scroll bars */
     overflow: hidden;
 }
-
 
 /* --- Build Order (BO) panel --- */
 
@@ -531,7 +630,7 @@ footer {
     padding-bottom: var(--bo_panel_lines_half_vertical_spacing);
 }
 
-/* Resrouces line of the BO panel */
+/* Resources line of the BO panel */
 .bo_line_resources {
     justify-content: flex-start;
     column-gap: var(--bo_line_resources_elements_gap);
@@ -593,7 +692,7 @@ footer {
 #images_bo_display {
     display: flex;
     flex-direction: column;
-    background-color: var(--images_bo_display_background_color);
+    background-color: var(--bo_panel_background_color);
     border-radius: var(--images_bo_display_border_radius);
     padding: var(--images_bo_display_padding);
     row-gap: var(--images_bo_display_gap);
@@ -607,8 +706,59 @@ footer {
     column-gap: var(--images_bo_display_gap);
 }
 
+/* Space for toggle text */
+#pip_window_selection_text,
+#auto_resize_selection_text,
+#side_selection_text {
+    padding-left: var(--side_selection_text_space);
+}
+
+/* Space for images size text */
+#bo_images_size_value {
+    padding-right: 20px;
+}
 
 /* --- Footer --- */
 #footer {
     text-align: center;
+}
+
+/* --- Mobile Adaptations --- */
+@media (max-width: 768px) {
+
+    /* Convert two columns to single column */
+    #body_config {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Adjust main columns for single column layout */
+    .main_column {
+        width: 100%;
+        max-width: 100%;
+        align-items: center;
+    }
+
+    /* Adjust config rows for better mobile display */
+    .config_row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* Adjust BO design textarea for mobile */
+    #bo_design_raw {
+        width: 95%;
+        height: 40vh;
+    }
+
+    /* Adjust BO visual design for mobile */
+    #bo_design_visual {
+        max-width: 95%;
+        max-height: 40vh;
+    }
+
+    /* Adjust images selection display for mobile */
+    #images_bo_display {
+        width: 95%;
+    }
 }

@@ -83,13 +83,12 @@
             </div>
 
             <!-- Build order main configuration selection -->
-            <div class="text_full_line_row"><span>Select build order</span></div>
+            <div id="bo_library" class="section_title"><span>Select build order</span></div>
             <div id="main_configuration" class="config_row radio_selector"></div>
-
 
             <!-- FROM LIBRARY -->
 
-            <div id="from_library_text" class="text_full_line_row"><span>Filter by faction and select build order</span>
+            <div id="from_library_text" class="section_title"><span>Filter by faction and select build order</span>
             </div>
 
             <!-- Selecting faction -->
@@ -137,22 +136,20 @@
                 <!-- Export all build orders -->
                 <div id="export_all_bos" class="tooltip">
                     <button type="button" class="button" onclick="exportAllBOs()">Export all build orders</button>
-                    <span class=" tooltiptext_right">
+                    <span class="tooltiptext_right">
                         <div>Export all build orders from this game as JSON files.</div>
                     </span>
                 </div>
             </div>
 
-
             <!-- FROM EXTERNAL WEBSITE -->
 
-            <div id="external_bo_text" class="text_full_line_row"><span>Get build order from</span></div>
+            <div id="external_bo_text" class="section_title"><span>Get build order from</span></div>
             <div id="external_bo_webistes" class="config_row"></div>
-
 
             <!-- DESIGN YOUR OWN -->
 
-            <div id="design_bo_text" class="text_full_line_row"><span>Design helper features</span></div>
+            <div id="design_bo_text" class="section_title"><span>Design helper features</span></div>
 
             <div id="design_bo_row_main" class="config_row">
                 <!-- Reset build order -->
@@ -176,9 +173,7 @@
                         <div>Format the build order panel on the right to a proper JSON format.</div>
                     </span>
                 </div>
-            </div>
 
-            <div id="design_bo_row_time" class="config_row">
                 <!-- Evaluate time -->
                 <div id="evaluate_time" class="tooltip">
                     <button type="button" class="button" onclick="evaluateTime()">Evaluate time</button>
@@ -191,17 +186,16 @@
                 </div>
                 <!-- Time evaluation offset -->
                 <div id="time_offset_widget" class="tooltip">
-                    <input type="number" id="time_offset" name="time_offset" value="0">
+                    <input type="number" class="bo_panel_number_select" id="time_offset" name="time_offset" value="0">
                     <span class="tooltiptext_right">
                         <div>Timing offset (in seconds) to add to all timing evaluations from 'Evaluate time'.</div>
                     </span>
                 </div>
             </div>
 
-
             <!-- SAVE BUILD ORDER -->
 
-            <div id="save_bo_text" class="text_full_line_row"><span>Save build order</span></div>
+            <div id="save_bo_text" class="section_title"><span>Save build order</span></div>
 
             <div id="save_row" class="config_row">
                 <!-- Add to library -->
@@ -231,12 +225,17 @@
                 </div>
             </div>
 
-
             <!-- DISPLAY OVERLAY -->
 
-            <div id="adapt_display_overlay" class="text_full_line_row"><span>Adapt and display overlay</span></div>
+            <div id="adapt_display_overlay" class="section_title"><span>Adapt and display overlay</span></div>
 
-            <div class="config_row">
+            <div id="bo_panel_display_buttons" class="config_row">
+                <!-- Display overlay -->
+                <div id="diplay_overlay" class="tooltip">
+                    <button type="button" class="button" onclick="displayOverlay()">Display overlay</button>
+                    <span id="diplay_overlay_tooltiptext" class="tooltiptext_right"></span>
+                </div>
+
                 <!-- Open full page -->
                 <div id="single_panel_page" class="tooltip">
                     <button type="button" class="button" onclick="openSinglePanelPage()">Open full page</button>
@@ -244,35 +243,10 @@
                         <div>Open a new page and display the full build order in a single panel.</div>
                     </span>
                 </div>
-
-                <!-- Display overlay -->
-                <div id="diplay_overlay" class="tooltip">
-                    <button type="button" class="button" onclick="displayOverlay()">Display overlay</button>
-                    <span id="diplay_overlay_tooltiptext" class="tooltiptext_right"></span>
-                </div>
-
-                <!-- Overlay on the left/right side of the screen -->
-                <div id="left_right_toggle">
-                    <div class="tooltip">
-                        <label class="switch">
-                            <input id="left_right_side" type="checkbox" checked>
-                            <span class="slider round"></span>
-                        </label>
-                        <span class="tooltiptext_right">
-                            <div>When updating the overlay to a new step, its size will be automatically adjusted</div>
-                            <div>to its content. Its position will be updated to keep one of its top corners at</div>
-                            <div>the same position. Choose 'overlay on the right' to fix the right border position</div>
-                            <div>and place the overlay on the right of your screen while playing. Selecting</div>
-                            <div>'overlay on the left' is ideal to keep the overlay on the left of the screen.</div>
-                        </span>
-                    </div>
-                    <div id="side_selection_text" class="configuration_text">overlay on the left</div>
-                </div>
             </div>
 
-            <!-- Sliders to adjust the overlay elements size -->
-            <div id="bo_panel_sliders" class="config_row">
-                <!-- Build order panel sliders -->
+            <div id="bo_panel_adapt_content" class="config_row">
+                <!-- Sliders to adjust the overlay elements size -->
                 <input id="bo_fontsize" class="bo_panel_number_select" type="number" min="0.1" max="3.0" value="1.0"
                     step="0.1">
                 <div class="tooltip">
@@ -281,6 +255,7 @@
                         <div>Font size for the build order panel text.</div>
                     </span>
                 </div>
+
                 <input id="bo_images_size" class="bo_panel_number_select" type="number" min="5" max="60" value="25"
                     step="1">
                 <div class="tooltip">
@@ -289,8 +264,79 @@
                         <div>Sizes of the images in the build order panel.</div>
                     </span>
                 </div>
+
+                <!-- Background overlay color selection -->
+                <input type="color" id="bo_background_color" value="#343a40" oninput="updateBackgroundColor()">
+                <div class="tooltip">
+                    <div id="bo_background_color_value" class="configuration_text">background color</div>
+                    <span class="tooltiptext_right">
+                        <div>Background color for the build order panel.</div>
+                    </span>
+                </div>
             </div>
 
+            <div id="bo_panel_toggles" class="config_row">
+                <!-- Picture-in-Picture vs Window Overlay Toggle (only shown if PiP is available) -->
+                <div id="pip_window_toggle">
+                    <div class="tooltip">
+                        <label class="switch">
+                            <input id="pip_classical_window" type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="tooltiptext_right">
+                            <div>Choose between Picture-in-Picture (floating window) or classic Window Overlay.</div>
+                            <div>Picture-in-Picture automatically keeps the overlay on top of the game.</div>
+                            <div>However, Picture-in-Picture can have auto-resize issues, especially for the timer.
+                            </div>
+                            <div>In contrast, the classic Window Overlay has usually a better resizing behavior but
+                            </div>
+                            <div>requires a third-party app (e.g. PowerToys) to stay on top of the game.</div>
+                        </span>
+                    </div>
+                    <div id="pip_window_selection_text" class="configuration_text">Picture-in-Picture</div>
+                </div>
+
+                <!-- Automatic overlay resize -->
+                <div id="auto_resize_toggle">
+                    <div class="tooltip">
+                        <label class="switch">
+                            <input id="auto_resize_active" type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="tooltiptext_right">
+                            <div>When 'Auto resize' is enabled, the overlay window will resize automatically to fit its
+                                content.</div>
+                            <div>Beware that this feature does not always work, especially for Picture-in-Picture mode.
+                            </div>
+                        </span>
+                    </div>
+                    <div id="auto_resize_selection_text" class="configuration_text">Manual resize</div>
+                </div>
+
+                <!-- Overlay on the left/right side of the screen (only shown if Window Overlay is selected) -->
+                <div id="left_right_toggle">
+                    <div class="tooltip">
+                        <label class="switch">
+                            <input id="left_right_side" type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="tooltiptext_right">
+                            <div>When updating the overlay to a new step (with 'Auto resize' activated), its size will
+                                be</div>
+                            <div>automatically adjusted to its content. Its position will be updated to keep one of its
+                            </div>
+                            <div>top corners at the same position.</div>
+                            <div>Choose 'Overlay on the right' to fix the right border position</div>
+                            <div>and place the overlay on the right of your screen while playing.</div>
+                            <div>Selecting 'Overlay on the left' is ideal to keep the overlay on the left of the screen.
+                            </div>
+                            <div>Note that the overlay on the right does not usually work for the Picture-in-Picture
+                                mode.</div>
+                        </span>
+                    </div>
+                    <div id="side_selection_text" class="configuration_text">Overlay on the left</div>
+                </div>
+            </div>
 
             <!-- OVERLAY PREVIEW / SALAMANDER -->
 

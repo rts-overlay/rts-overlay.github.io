@@ -1,3 +1,10 @@
+## 2026.06.10
+* Picture-in-Picture mode selection added.
+* Background color customization added.
+* Manual vs auto window resize option added.
+* Updated web visual presentation.
+* Better visualization for mobile (but still not the primary focus of the project).
+
 ## 2026.05.13
 * AoE2
     * Add "All" build orders filtering option.

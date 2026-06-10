@@ -1,11 +1,11 @@
 // -- Define parameters -- //
 
 const EDITOR_IMAGE_HEIGHT = 30; // Height of images for the editor.
-const TITLE_IMAGE_HEIGHT = 70; // Height of the 'RTS Overlay' title.
+const TITLE_IMAGE_HEIGHT = 65; // Height of the 'RTS Overlay' title.
 const INFO_IMAGE_HEIGHT = 30; // Height of the RTS Overlay information button.
 const TIMER_CHECK_HEIGHT = 20; // Height of timer check icon.
 const VISUAL_EDITOR_ICON_HEIGHT = 25; // Height of the icons for Visual Editor.
-const SALAMANDER_IMAGE_HEIGHT = 250; // Height of the salamander image.
+const SALAMANDER_IMAGE_HEIGHT = 200; // Height of the salamander image.
 const SLEEP_TIME = 100; // Sleep time to resize the window [ms].
 const INTERVAL_CALL_TIME = 250; // Time interval between regular calls [ms].
 const SIZE_UPDATE_THRESHOLD = 5; // Minimal thershold to update the size.
@@ -14,6 +14,10 @@ const DEFAULT_BO_PANEL_FONTSIZE = 1.0; // Default font size for BO panel.
 const DEFAULT_BO_PANEL_IMAGES_SIZE = 25; // Default images size for BO panel.
 // Height of the action buttons as a ratio of the images size for the BO panel.
 const ACTION_BUTTON_HEIGHT_RATIO = 0.8;
+// Default PiP or classical window selection
+const DEFAULT_CLASSICAL_WINDOW_SELECT = false;
+// Defaut auto-resize choice
+const DEFAULT_AUTO_RESIZE_ACTIVE = false;
 // Default choice for overlay on right or left side of the screen.
 const DEFAULT_OVERLAY_ON_RIGHT_SIDE = false;
 const MAX_SEARCH_RESULTS = 10; // Maximum number of search results to display.
@@ -183,6 +187,9 @@ let visualGridMatchingNames = []; //  matching image names for the grid
 let visualGridImages = []; // visible images for the grid
 let visualGridAtString = null; // location of the '@' character of interest for the grid
 let welcomeMessageActive = false; // true if welcome message is shown
+let isPiPAvailable = false; // true if PiP (Picture-in-Picture) is available
+let usePiP = true; // track if PiP is selected for the overlay
+let autoResize = false; // check if auto-resize is activated
 
 // Build order timer elements
 let buildOrderTimer = {
@@ -254,6 +261,11 @@ function limitStepID() {
  * at the same position.
  */
 function overlayResizeMove() {
+  // Resizing not activated
+  if (!autoResize) {
+    return;
+  }
+
   // Get current window width and height
   const currentWidth = window.outerWidth;
   const currentHeight = window.outerHeight;
@@ -297,6 +309,11 @@ function overlayResizeMove() {
  * at the same position (after a short delay to wait for panel update).
  */
 function overlayResizeMoveDelay() {
+  // Resizing not activated
+  if (!autoResize) {
+    return;
+  }
+
   sleep(SLEEP_TIME).then(() => {
     // Check font size
     const boPanelElement = document.getElementById('bo_panel');
@@ -781,7 +798,6 @@ function showHideItems() {
     'images_bo_display',
   ];
   const rawDesignValidItems = ['add_bo_step', 'format_bo'];
-  const designValidTimeItems = ['design_bo_row_time'];
   const designItemsVisualOnly = ['drag_and_drop_note'];
   const designItemsRawOnly = ['image_copy'];
 
@@ -794,7 +810,6 @@ function showHideItems() {
     websiteItems,
     designItems,
     rawDesignValidItems,
-    designValidTimeItems,
     designItemsVisualOnly,
     designItemsRawOnly,
     saveItems,
@@ -839,8 +854,6 @@ function showHideItems() {
             showItem = visualEditorActivated;
           } else if (rawDesignValidItems.includes(itemName)) {
             showItem = dataBO !== null && !visualEditorActivated;
-          } else if (designValidTimeItems.includes(itemName)) {
-            showItem = dataBO !== null && isBOTimingEvaluationAvailable();
           } else if (saveItems.includes(itemName)) {
             showItem = dataBO !== null;
           }
@@ -1455,13 +1468,15 @@ function getDiplayOverlayTooltiptext() {
   let htmlString = `
 <div>Display the overlay in a separate window, to be used while in-game.</div>
 <div>-----</div>
+<div>In Picture-in-Picture mode (see below), the overlay should stay on top of your game.</div>
+<div>In Classical window mode, the overlay will not stay by default on top of your game.</div>
 <div>To keep it on top of your game while playing, use an <em>Always On Top</em> application.</div>
 <div>For Windows, <em>PowerToys</em> is a good solution.</div>
 <div>It is free, developed by Microsoft and available on the <em>Microsoft Store</em>.</div>
 <div>-----</div>
 <div>Use the left and right arrow buttons to select the build order step.</div>
 <div>In case valid timings are available for all steps, click on the feather/hourglass</div>
-<div>to switch to the timer mode (updating the steps with a timer).</div>
+<div>button to switch to the timer mode (updating the steps with a timer).</div>
 <div>In timer mode, you can increment/decrement the clock by 1 second with the</div>
 <div>arrow buttons, start/stop the timer and set it back to <em>0:00</em>.</div>`;
 
@@ -1509,12 +1524,6 @@ function getDiplayOverlayTooltiptext() {
     htmlString += '<div>- No hotkey defined.</div>';
   }
 
-  htmlString += `
-<div>-----</div>
-<div>On Windows, use '<em>chrome.exe --app=https://rts-overlay.github.io</em>' in the <em>Run</em> app to run it with</div>
-<div>a smaller header on Chrome (solution depending on the selected web browser).</div>
-  `;
-
   return htmlString;
 }
 
@@ -1536,12 +1545,36 @@ function updateBOFromWidgets() {
     updateBOPanel(false);
   }
 
+  // PiP or classical window selection
+  const newUsePiP = isPiPAvailable && !document.getElementById('pip_classical_window').checked;
+  if (newUsePiP !== usePiP) {
+    usePiP = newUsePiP;
+    document.getElementById('pip_window_selection_text').innerHTML = usePiP
+      ? 'Picture-in-Picture'
+      : 'Classical window';
+
+    if (!usePiP) {
+      autoResize = true;
+      document.getElementById('auto_resize_active').checked = true;
+      document.getElementById('auto_resize_selection_text').innerHTML = 'Auto resize';
+    }
+  }
+
+  // Auto resize overlay or manual resize
+  const newAutoResize = document.getElementById('auto_resize_active').checked;
+  if (newAutoResize !== autoResize) {
+    autoResize = newAutoResize;
+    document.getElementById('auto_resize_selection_text').innerHTML = autoResize
+      ? 'Auto resize'
+      : 'Manual resize';
+  }
+
   // Fixed top corner choice
   const newOverlayOnRightSide = document.getElementById('left_right_side').checked;
   if (newOverlayOnRightSide !== overlayOnRightSide) {
     overlayOnRightSide = newOverlayOnRightSide;
     document.getElementById('side_selection_text').innerHTML =
-      'overlay on the ' + (overlayOnRightSide ? 'right' : 'left');
+      'Overlay on the ' + (overlayOnRightSide ? 'right' : 'left');
     updateBOPanel(false);
   }
 }
@@ -1639,6 +1672,9 @@ function initConfigWindow() {
   let preloadErrorImager = new Image();
   preloadErrorImager.src = ERROR_IMAGE;
 
+  // Check if PiP is available
+  isPiPAvailable = 'documentPictureInPicture' in window;
+
   // Get the requested game from the URL options
   const params = new URLSearchParams(new URL(window.location.href).search);
 
@@ -1697,11 +1733,19 @@ function initConfigWindow() {
   // Set default sliders values
   document.getElementById('bo_fontsize').value = DEFAULT_BO_PANEL_FONTSIZE;
   document.getElementById('bo_images_size').value = DEFAULT_BO_PANEL_IMAGES_SIZE;
+  document.getElementById('pip_classical_window').checked = DEFAULT_CLASSICAL_WINDOW_SELECT;
+  document.getElementById('auto_resize_active').checked = DEFAULT_AUTO_RESIZE_ACTIVE;
   document.getElementById('left_right_side').checked = DEFAULT_OVERLAY_ON_RIGHT_SIDE;
   updateBOFromWidgets();
 
   // Update elements depending on the selected game
   updateGame();
+
+  // Check PiP toggle
+  usePiP = isPiPAvailable && !document.getElementById('pip_classical_window').checked;
+
+  // Check auto-resize
+  autoResize = document.getElementById('auto_resize_active').checked;
 
   // Updating the variables when changing the game
   document.getElementById('select_game').addEventListener('input', function () {
@@ -1729,6 +1773,16 @@ function initConfigWindow() {
   });
 
   document.getElementById('bo_images_size').addEventListener('input', function () {
+    updateBOFromWidgets();
+  });
+
+  // Update BO PiP or classical window selection when updating the corresponding toggle
+  document.getElementById('pip_classical_window').addEventListener('input', function () {
+    updateBOFromWidgets();
+  });
+
+  // Update BO auto-resize feature
+  document.getElementById('auto_resize_active').addEventListener('input', function () {
     updateBOFromWidgets();
   });
 
@@ -1827,7 +1881,11 @@ function updateRTSOverlayInfo() {
  */
 function updateSalamanderIcon() {
   document.getElementById('bo_panel').innerHTML = '';
-  document.getElementById('bo_panel_sliders').style.display = 'none';
+  document.getElementById('bo_panel_display_buttons').style.display = 'none';
+  document.getElementById('bo_panel_adapt_content').style.display = 'none';
+  document.getElementById('bo_panel_toggles').style.display = 'none';
+  document.getElementById('pip_window_toggle').style.display = 'none';
+  document.getElementById('auto_resize_toggle').style.display = 'none';
   document.getElementById('left_right_toggle').style.display = 'none';
   document.getElementById('salamander').innerHTML = getImageHTML(
     'assets/common/icon/salamander_sword_shield.webp',
@@ -1848,10 +1906,30 @@ function updateBOPanel(overlayFlag) {
     salamaderIcon.innerHTML = '';
   }
 
-  // Show BO panel sliders and left/right toggle if present
-  let boPanelSliders = document.getElementById('bo_panel_sliders');
-  if (boPanelSliders) {
-    boPanelSliders.style.display = 'flex';
+  // Show BO panel buttons and sliders if present
+  let boPanelDisplayButtons = document.getElementById('bo_panel_display_buttons');
+  if (boPanelDisplayButtons) {
+    boPanelDisplayButtons.style.display = 'flex';
+  }
+
+  let boPanelAdaptContent = document.getElementById('bo_panel_adapt_content');
+  if (boPanelAdaptContent) {
+    boPanelAdaptContent.style.display = 'flex';
+  }
+
+  let boPanelToggles = document.getElementById('bo_panel_toggles');
+  if (boPanelToggles) {
+    boPanelToggles.style.display = 'flex';
+  }
+
+  let pipWindowToggle = document.getElementById('pip_window_toggle');
+  if (pipWindowToggle && isPiPAvailable) {
+    pipWindowToggle.style.display = 'flex';
+  }
+
+  let autoResizeToggle = document.getElementById('auto_resize_toggle');
+  if (autoResizeToggle) {
+    autoResizeToggle.style.display = 'flex';
   }
 
   let leftRightToggle = document.getElementById('left_right_toggle');
@@ -3369,12 +3447,7 @@ function updateLibrarySearch() {
     // Nothing added in the search field
     if (searchStr.length === 0) {
       const factionName = document.getElementById('library_faction_select_widget').value;
-      boSearchText +=
-        '<div>Select the player faction above (' +
-        factionsList[factionName][0] +
-        ': <b>' +
-        factionName +
-        '</b>)';
+      boSearchText += '<div>Select the player faction above (<b>' + factionName + '</b>)';
 
       if (FACTION_FIELD_NAMES[gameName]['opponent']) {
         const opponentFactionName = document.getElementById(
@@ -4695,6 +4768,9 @@ function openSinglePanelPageFromDescription(columnsDescription, sectionsHeader =
   }
   const buildOrderData = dataBO['build_order'];
 
+  const backgroundColorPicker = document.getElementById('bo_background_color');
+  const userBackgroundColor = backgroundColorPicker ? backgroundColorPicker.value : '#343a40'; // Fallback to default
+
   // Check which columns need to be displayed
   let displayColumns = new Array(columnsDescription.length).fill(false);
 
@@ -4824,7 +4900,7 @@ function openSinglePanelPageFromDescription(columnsDescription, sectionsHeader =
   htmlContent += indentSpace(3) + 'font-size: 16px;\n';
   htmlContent += indentSpace(3) + 'border-radius: 5px;\n';
   htmlContent += indentSpace(3) + 'border: 1px solid rgb(204, 204, 204);\n';
-  htmlContent += indentSpace(3) + 'background-color: rgb(55, 55, 55);\n';
+  htmlContent += indentSpace(3) + 'background-color: ' + userBackgroundColor + ';\n';
   htmlContent += indentSpace(3) + 'color: white;\n';
   htmlContent += indentSpace(3) + 'cursor: pointer;\n';
   htmlContent += indentSpace(3) + 'transition: background-color 0.3s;\n';
@@ -4836,7 +4912,7 @@ function openSinglePanelPageFromDescription(columnsDescription, sectionsHeader =
 
   htmlContent += indentSpace(2) + 'table {\n';
   htmlContent += indentSpace(3) + 'color: rgb(255, 255, 255);\n';
-  htmlContent += indentSpace(3) + 'background-color: rgb(55, 55, 55);\n';
+  htmlContent += indentSpace(3) + 'background-color: ' + userBackgroundColor + ';\n';
   htmlContent += indentSpace(3) + 'margin: 0 auto;\n';
   htmlContent += indentSpace(3) + 'border-radius: 15px;\n';
   htmlContent += indentSpace(3) + 'border-collapse: collapse;\n';
@@ -5153,29 +5229,43 @@ function openSinglePanelPageFromDescription(columnsDescription, sectionsHeader =
 /**
  * Display (and create) the overlay window.
  */
-function displayOverlay() {
+async function displayOverlay() {
   // Close window if already open
   if (overlayWindow !== null) {
-    overlayWindow.close();
+    try {
+      if (overlayWindow.close) {
+        overlayWindow.close();
+      }
+    } catch (e) {
+      console.error('Error while closing overlay:', e);
+    }
+    overlayWindow = null;
   }
 
   // Check if BO is valid
   const validBO = checkValidBO();
 
-  // Create window
-  overlayWindow = window.open('', '_blank', 'width=400, height=200');
+  // Get the user-selected background color
+  const backgroundColorPicker = document.getElementById('bo_background_color');
+  const userBackgroundColor = backgroundColorPicker ? backgroundColorPicker.value : '#343a40'; // Fallback to default
 
-  // Title
+  // HTML content (shared between PiP and window.open)
   const headContent = '<title>RTS Overlay</title>';
-
-  // Build order initialized for step 0
   const bodyContent = '<div id="bo_panel">' + getBOPanelContent(true, validBO ? 0 : -1) + '</div>';
 
-  // HTML content
   let htmlContent = '<!DOCTYPE html><html lang="en">';
 
-  htmlContent += '\n<script>';
+  // Add inline style to override the background color
+  htmlContent += '\n<head>';
+  htmlContent += '\n<style>';
+  htmlContent += '\n:root {';
+  htmlContent += '\n--bo_panel_background_color: ' + userBackgroundColor + ' !important;';
+  htmlContent += '\n--images_bo_display_background_color: ' + userBackgroundColor + ' !important;';
+  htmlContent += '\n}</style>';
+  htmlContent += '\n<link rel="stylesheet" href="layout.css">' + headContent + '</head>';
 
+  htmlContent += '\n<script>';
+  htmlContent += '\nconst autoResize = ' + autoResize + ';';
   htmlContent += '\nconst actionButtonHeight = ' + actionButtonHeight + ';';
   htmlContent += '\nconst overlayOnRightSide = ' + overlayOnRightSide + ';';
   htmlContent += '\nconst SLEEP_TIME = ' + SLEEP_TIME + ';';
@@ -5184,7 +5274,6 @@ function displayOverlay() {
   htmlContent +=
     '\nconst OVERLAY_KEYBOARD_SHORTCUTS = ' + JSON.stringify(OVERLAY_KEYBOARD_SHORTCUTS) + ';';
   htmlContent += '\nconst ERROR_IMAGE = "' + ERROR_IMAGE + '";';
-
   htmlContent += "\nconst gameName = '" + gameName + "';";
   htmlContent += '\nconst dataBO = ' + (validBO ? JSON.stringify(dataBO) : 'null') + ';';
   htmlContent += '\nconst stepCount = ' + (validBO ? stepCount : -1) + ';';
@@ -5197,7 +5286,7 @@ function displayOverlay() {
   htmlContent += "\nconst boPanelFontSize = '" + fontsizeSlider.value.toString(1) + "em';";
 
   // Adapt timer variables for overlay
-  let timerOverlay = Object.assign({}, buildOrderTimer); // copy the object
+  let timerOverlay = Object.assign({}, buildOrderTimer);
   timerOverlay['step_starting_flag'] = TIMER_STEP_STARTING_FLAG.includes(gameName);
   timerOverlay['absolute_time_init'] = getCurrentTime();
   timerOverlay['steps_ids'] = [0];
@@ -5243,10 +5332,29 @@ function displayOverlay() {
   htmlContent += '\n' + getResourceLineString(gameName);
 
   htmlContent += '\n</script>';
+  htmlContent += '\n<body id="body_overlay">' + bodyContent + '</body></html>';
 
-  htmlContent += '\n<head><link rel="stylesheet" href="layout.css">' + headContent + '</head>';
-  htmlContent += '\n<body id=\"body_overlay\">' + bodyContent + '</body></html>';
+  // --- Use Picture-in-Picture if selected and available ---
+  if (usePiP && 'documentPictureInPicture' in window) {
+    try {
+      const pipWindow = await window.documentPictureInPicture.requestWindow({
+        width: 400,
+        height: 200,
+      });
 
+      pipWindow.document.open();
+      pipWindow.document.write(htmlContent);
+      pipWindow.document.close();
+
+      overlayWindow = pipWindow;
+      return;
+    } catch (e) {
+      console.warn('documentPictureInPicture failed:', e);
+      // Fall back to window.open()
+    }
+  }
+
+  // --- Fallback: Classic window.open() ---
   if (localStorage.getItem('hideAlwaysOnTopNote') !== 'true') {
     const userChoice = confirm(
       'To keep the overlay on top of your game while playing, use an Always On Top application.\n' +
@@ -5259,8 +5367,8 @@ function displayOverlay() {
     }
   }
 
-  // Update overlay HTML content
-  overlayWindow.document.open();
+  // Open a new window with the overlay content
+  overlayWindow = window.open('', '_blank', 'width=400, height=200');
   overlayWindow.document.write(htmlContent);
   overlayWindow.document.close();
 }
@@ -5303,9 +5411,8 @@ function contentArrayToDiv(content) {
  */
 function getArrayInstructions(externalBOLines = null) {
   let result = [
-    "Update the panel below with the requested build order, then click on 'Open full page' or 'Display overlay'",
-    '(appearing on the left side of the screen when the build order is valid). You will need an <i>Always On Top</i> application',
-    "to keep the overlay visible while playing. Hover briefly on the 'Display overlay' button to get more information.",
+    "Update the panel below with the requested build order, then click on 'Display overlay' or 'Open full page'",
+    '(appearing on the left side of the screen when the build order is valid).',
     '',
     'Filter and select (or delete) your stored build orders in the <b>From library</b> section.',
   ];
@@ -5368,4 +5475,19 @@ Welcome to RTS Overlay! \
 \n\nHover on the information button ("i" icon on top of this panel) to read the full instructions.\
 \nTooltips are available for the buttons on the left (by hovering during a short time). \
 \n\nHave fun!`;
+}
+
+/**
+ * Update the background color of the BO panel based on the color picker.
+ */
+function updateBackgroundColor() {
+  const colorPicker = document.getElementById('bo_background_color');
+  const newColor = colorPicker.value;
+
+  // Update the CSS variable for BO panel background color
+  document.documentElement.style.setProperty('--bo_panel_background_color', newColor);
+  document.documentElement.style.setProperty('--images_bo_display_background_color', newColor);
+
+  // Update the BO panel and overlay if open
+  updateBOPanel(false);
 }
